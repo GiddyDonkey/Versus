@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VERSUS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0E0E11;
+            color: #F5F5F7;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* ARENA HOME */
+        .header {
+            background: linear-gradient(180deg, #1C1C1E 0%, #0E0E11 100%);
+            padding: 60px 20px 30px;
+            border-bottom: 1px solid #2C2C2E;
+        }
+
+        .arena-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #8E8E93;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .champion-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: radial-gradient(circle at left, rgba(212, 175, 55, 0.12) 0%, transparent 70%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            animation: throneGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes throneGlow {
+            0%, 100% { 
+                box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.3),
+                            0 0 20px rgba(212, 175, 55, 0.1);
+                border-color: rgba(212, 175, 55, 0.3);
+            }
+            50% { 
+                box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.5),
+                            0 0 35px rgba(212, 175, 55, 0.25);
+                border-color: rgba(212, 175, 55, 0.5);
+            }
+        }
+
+        .champion-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #D4AF37, #FFD700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            position: relative;
+        }
+
+        .champion-avatar::after {
+            content: '👑';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-size: 20px;
+        }
+
+        .champion-avatar.at-risk::after {
+            animation: crownPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes crownPulse {
+            0%, 100% { 
+                filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+            }
+            50% { 
+                filter: drop-shadow(0 0 16px rgba(212, 175, 55, 1));
+            }
+        }
+
+        .champion-info { flex: 1; }
+        .champion-label { font-size: 10px; color: #8E8E93; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .champion-name { font-size: 20px; font-weight: 700; color: #D4AF37; margin-bottom: 2px; }
+        .defense-count { font-size: 12px; color: #8E8E93; }
+
+        .season-bar-container { margin-top: 16px; }
+        .season-label { font-size: 10px; color: #8E8E93; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .season-bar { height: 3px; background: #2C2C2E; border-radius: 2px; overflow: hidden; }
+        .season-fill { height: 100%; background: linear-gradient(90deg, #D4AF37, #FFD700); transition: width 0.3s; }
+
+        /* FEATURED CARD */
+        .featured {
+            margin: 20px;
+            background: linear-gradient(135deg, #1C1C1E, #2C2C2E);
+            border: 2px solid #D4AF37;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.2);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            animation: featuredPulse 3s ease-in-out infinite;
+        }
+
+        .featured::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(212, 175, 55, 0.15), 
+                transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            to { left: 100%; }
+        }
+
+        @keyframes featuredPulse {
+            0%, 100% { 
+                box-shadow: 0 8px 32px rgba(212, 175, 55, 0.2);
+            }
+            50% { 
+                box-shadow: 0 8px 40px rgba(212, 175, 55, 0.35);
+            }
+        }
+
+        .featured-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid #D4AF37;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #D4AF37;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .featured-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+
+        .stakes {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stakes-text { font-size: 12px; font-weight: 600; color: #D4AF37; }
+
+        .countdown {
+            text-align: center;
+            padding: 16px;
+            background: #1C1C1E;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .countdown-label { font-size: 10px; color: #8E8E93; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .countdown-time { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+        /* STANDINGS */
+        .standings { padding: 20px; }
+        .section-title { font-size: 12px; font-weight: 700; color: #8E8E93; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+
+        .standing {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #1C1C1E;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+        }
+
+        .standing.champion { background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(255, 215, 0, 0.04)); border-color: rgba(212, 175, 55, 0.3); }
+        .standing.you { border-color: rgba(52, 199, 89, 0.3); background: rgba(52, 199, 89, 0.08); }
+
+        .rank {
+            font-size: 20px;
+            font-weight: 800;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .rank.first { color: #D4AF37; }
+        .rank.second { color: #C0C0C0; }
+        .rank.third { color: #CD7F32; }
+        .rank.other { color: #666; }
+
+        .player { flex: 1; }
+        .player-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .player-pts { font-size: 12px; color: #8E8E93; }
+
+        /* BUTTONS */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #D4AF37, #FFD700);
+            color: #0E0E11;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            animation: ctaPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes ctaPulse {
+            0%, 100% { 
+                box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+                transform: translateY(0);
+            }
+            50% { 
+                box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+            }
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(212, 175, 55, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-sec {
+            background: #2C2C2E;
+            color: #F5F5F7;
+            border: 1px solid #3C3C3E;
+        }
+
+        /* VOTING */
+        .vote-grid { display: grid; gap: 16px; padding: 20px; }
+        
+        .vote-card {
+            background: #1C1C1E;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .vote-card.rank-1 { border-color: #D4AF37; box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
+        .vote-card.rank-2 { border-color: #C0C0C0; box-shadow: 0 0 20px rgba(192, 192, 192, 0.2); }
+        .vote-card.rank-3 { border-color: #CD7F32; box-shadow: 0 0 20px rgba(205, 127, 50, 0.2); }
+
+        .vote-img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            background: #2C2C2E;
+        }
+
+        .vote-info { padding: 14px; }
+        .vote-name { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+
+        .rank-btns { display: flex; gap: 6px; }
+        .rank-btn {
+            flex: 1;
+            padding: 8px;
+            background: #2C2C2E;
+            border: 1px solid #3C3C3E;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #F5F5F7;
+        }
+
+        .rank-btn.sel-1 { background: #D4AF37; color: #0E0E11; border-color: #D4AF37; }
+        .rank-btn.sel-2 { background: #C0C0C0; color: #0E0E11; border-color: #C0C0C0; }
+        .rank-btn.sel-3 { background: #CD7F32; color: #0E0E11; border-color: #CD7F32; }
+
+        /* RESULTS */
+        .results {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .podium-place {
+            text-align: center;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: reveal 0.8s ease forwards;
+        }
+
+        @keyframes reveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .place-label { font-size: 12px; color: #8E8E93; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+        .place-medal { font-size: 56px; margin-bottom: 12px; }
+        .place-img { width: 180px; height: 180px; border-radius: 14px; object-fit: cover; margin: 0 auto 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .place-name { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .place-pts { font-size: 15px; color: #8E8E93; }
+
+        /* CROWN TRANSFER */
+        .crown-anim {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            z-index: 9999;
+            animation: crownFloat 2s ease;
+        }
+
+        @keyframes crownFloat {
+            0% { opacity: 0; transform: translate(-50%, -70%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
+        }
+
+        /* MOVEMENT OVERLAY */
+        .movement-over {
+            position: fixed;
+            inset: 0;
+            background: rgba(14, 14, 17, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeInOut 2s ease;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            20%, 80% { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes crownHover {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes crownLand {
+            from { opacity: 0; transform: translateY(-50px) scale(2); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .movement-arrow { font-size: 56px; margin-bottom: 12px; }
+        .movement-text { font-size: 20px; font-weight: 700; }
+
+        /* CONFETTI */
+        .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 9998; }
+        .confetti-piece { position: absolute; width: 6px; height: 6px; background: white; border-radius: 50%; animation: fall 3s linear; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+
+        /* FLOATING CROWN */
+        .float-crown {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            width: 44px;
+            height: 44px;
+            background: rgba(212, 175, 55, 0.12);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(14, 14, 17, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: #1C1C1E;
+            border-radius: 14px;
+            padding: 28px;
+            max-width: 380px;
+            width: 100%;
+            border: 1px solid #2C2C2E;
+        }
+
+        .modal-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; }
+        .modal-body { margin-bottom: 20px; color: #8E8E93; }
+
+        /* INTRO */
+        .intro {
+            position: fixed;
+            inset: 0;
+            background: #0E0E11;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .intro-badge { font-size: 13px; color: #D4AF37; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; }
+        .intro-title { font-size: 42px; font-weight: 800; text-align: center; margin-bottom: 12px; line-height: 1.2; }
+        .intro-sub { font-size: 16px; color: #8E8E93; margin-bottom: 28px; }
+        .intro-count { font-size: 64px; font-weight: 800; color: #D4AF37; font-variant-numeric: tabular-nums; }
+
+        .hidden { display: none; }
+
+        /* MUTE TOGGLE */
+        .mute-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(28, 28, 30, 0.9);
+            border: 1px solid #3C3C3E;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+
+        .mute-toggle:hover {
+            background: rgba(44, 44, 46, 0.9);
+            transform: scale(1.05);
+        }
+
+        /* DEMO MODE INDICATOR */
+        .demo-indicator {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            padding: 6px 10px;
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-radius: 6px;
+            font-size: 9px;
+            color: rgba(255, 59, 48, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            backdrop-filter: blur(10px);
+            opacity: 0.7;
+        }
+
+        /* TOAST NOTIFICATIONS */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #1C1C1E;
+            border: 1px solid #3C3C3E;
+            border-radius: 12px;
+            padding: 14px 20px;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            max-width: 90%;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-success {
+            border-color: #34C759;
+        }
+
+        .toast-error {
+            border-color: #FF3B30;
+        }
+
+        .toast-info {
+            border-color: #0A84FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app"></div>
+    <div class="float-crown" onclick="showChampInfo()">👑</div>
+
+    <!-- Mute Toggle -->
+    <div id="muteToggle" class="mute-toggle" onclick="toggleMute()">
+        <span id="muteIcon">🔊</span>
+    </div>
+
+    <!-- Demo Mode Indicator -->
+    <div id="demoIndicator" class="demo-indicator">
+        <span style="font-size:10px; opacity:0.8;">DEMO MODE</span>
+        <span style="font-size:8px; opacity:0.6;">Compressed timers</span>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // FIREBASE
+        const firebaseConfig = {
+          apiKey: "AIzaSyBbHiG6wEBvMRwhH_f8cotQc2HQoZ0V8ZU",
+          authDomain: "versus-b202b.firebaseapp.com",
+          databaseURL: "https://versus-b202b-default-rtdb.firebaseio.com",
+          projectId: "versus-b202b",
+          storageBucket: "versus-b202b.firebasestorage.app",
+          messagingSenderId: "878415783187",
+          appId: "1:878415783187:web:b917374dd39132bafda6e6"
+        };
+        
+        let db;
+        try { firebase.initializeApp(firebaseConfig); db = firebase.database(); } catch(e) { console.log('Firebase error:', e); }
+
+        // SOUND SYSTEM
+        let soundEnabled = true;
+        
+        // Simple sine wave sound generator
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const sounds = {
+            podium: function(place) {
+                if (!soundEnabled) return;
+                const frequencies = { 1: 250, 2: 220, 3: 200 }; // Higher place = higher pitch
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = frequencies[place] || 200;
+                oscillator.type = 'sine';
+                const volume = place === 1 ? 0.35 : 0.3; // First place slightly louder
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                haptic(place === 1 ? 'heavy' : 'medium');
+            },
+            crownLift: function() {
+                if (!soundEnabled) return;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.5);
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                haptic('heavy');
+            },
+            crownLand: function() {
+                if (!soundEnabled) return;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 150; // Deep gong
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.8);
+                haptic('heavy');
+            },
+            voteClick: function() {
+                if (!soundEnabled) return;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+                haptic('light');
+            },
+            confetti: function() {
+                if (!soundEnabled) return;
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        oscillator.frequency.value = 400 + Math.random() * 400;
+                        oscillator.type = 'sine';
+                        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.2);
+                    }, i * 100);
+                }
+            }
+        };
+
+        function haptic(intensity) {
+            if ('vibrate' in navigator) {
+                const patterns = {
+                    light: 10,
+                    medium: 20,
+                    heavy: 50
+                };
+                navigator.vibrate(patterns[intensity] || 20);
+            }
+        }
+
+        function toggleMute() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('muteIcon').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        // DATA
+        let demoMode = true; // DEMO MODE - set to true for 2-minute demo with compressed timers
+        
+        const currentUser = { id: 'u1', name: 'You', avatar: '👤' };
+        const arena = { id: 'a1', name: 'JOHNSON LEAGUE', championId: 'u2', seasonId: 's1' };
+        const season = { id: 's1', num: 1, start: Date.now() - 14*24*60*60*1000, end: Date.now() + 14*24*60*60*1000 };
+        
+        const users = {
+            'u1': { id: 'u1', name: 'You', avatar: '👤' },
+            'u2': { id: 'u2', name: 'Jason', avatar: '🦁', defenses: 2 },
+            'u3': { id: 'u3', name: 'Sarah', avatar: '🌟', defenses: 0 },
+            'u4': { id: 'u4', name: 'Mike', avatar: '⚡', defenses: 0 }
+        };
+
+        let standings = [
+            { userId: 'u2', points: 42, rank: 1 },
+            { userId: 'u3', points: 38, rank: 2 },
+            { userId: 'u1', points: 35, rank: 3 },
+            { userId: 'u4', points: 28, rank: 4 }
+        ];
+
+        const featured = {
+            id: 'c1',
+            title: 'Best Breakfast',
+            state: 'OPEN',
+            subDeadline: Date.now() + (demoMode ? 60 * 1000 : 2*60*60*1000), // 60 seconds in demo, 2 hours in prod
+            voteDeadline: Date.now() + (demoMode ? 120 * 1000 : 26*60*60*1000) // 120 seconds in demo, 26 hours in prod
+        };
+
+        let subs = {};
+        let ballots = {};
+        let ranks = { first: null, second: null, third: null };
+        let screen = 'home';
+        let lastMatchup = { winner: null, loser: null }; // P2 #10: Track for revenge matches
+        let timerAutoAdvanceTriggered = false; // Prevent multiple timer triggers
+
+        // TOAST NOTIFICATIONS
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.innerHTML = '<div style="display:flex; align-items:center; gap:10px;">' +
+                             '<span style="font-size:20px;">' + (type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️') + '</span>' +
+                             '<span>' + message + '</span>' +
+                             '</div>';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // RENDER
+        function render() {
+            const app = document.getElementById('app');
+            
+            // Show loading state
+            app.style.opacity = '0';
+            app.style.transition = 'opacity 0.2s ease';
+            
+            setTimeout(() => {
+                if (screen === 'home') app.innerHTML = renderHome();
+                else if (screen === 'intro') { app.innerHTML = renderIntro(); setTimeout(() => { screen = 'submit'; render(); }, 3000); }
+                else if (screen === 'submit') app.innerHTML = renderSubmit();
+                else if (screen === 'voting') app.innerHTML = renderVoting();
+                else if (screen === 'results') { app.innerHTML = renderResults(); animateResults(); }
+                else if (screen === 'standings') app.innerHTML = renderStandings();
+                
+                startTimers();
+                
+                // Fade in
+                setTimeout(() => {
+                    app.style.opacity = '1';
+                }, 10);
+            }, 200);
+        }
+
+        function renderHome() {
+            const champ = users[arena.championId];
+            const progress = ((Date.now() - season.start) / (season.end - season.start)) * 100;
+            const days = Math.ceil((season.end - Date.now()) / (1000*60*60*24));
+            
+            let h = '<div class="header">';
+            h += '<div class="arena-name">' + arena.name + '</div>';
+            h += '<div class="champion-card">';
+            h += '<div class="champion-avatar' + (featured.state === 'OPEN' ? ' at-risk' : '') + '">' + champ.avatar + '</div>';
+            h += '<div class="champion-info">';
+            h += '<div class="champion-label">Current Champion</div>';
+            h += '<div class="champion-name">' + champ.name + '</div>';
+            if (champ.defenses > 0) {
+                h += '<div class="defense-count">🔥 ' + champ.defenses + '-Defense Streak</div>';
+            } else {
+                h += '<div class="defense-count">New Champion</div>';
+            }
+            h += '</div></div>';
+            h += '<div class="season-bar-container">';
+            h += '<div class="season-label"><span>SEASON ' + season.num + '</span><span>' + days + ' DAYS LEFT</span></div>';
+            h += '<div class="season-bar"><div class="season-fill" style="width:' + progress + '%"></div></div>';
+            h += '</div></div>';
+            
+            h += '<div class="featured" onclick="startFeatured()">';
+            h += '<div class="featured-badge">⚡ FEATURED — DOUBLE POINTS</div>';
+            h += '<h2 class="featured-title">' + featured.title + '</h2>';
+            
+            // MUST DO #3: "Win to Claim Crown" callout
+            h += '<div style="background: rgba(212, 175, 55, 0.15); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: center;">';
+            h += '<div style="font-size: 20px; margin-bottom: 4px;">👑</div>';
+            h += '<div style="font-size: 14px; font-weight: 700; color: #D4AF37; letter-spacing: 0.5px;">WIN TO CLAIM THE CROWN</div>';
+            h += '</div>';
+            
+            h += '<div class="stakes"><span class="stakes-text">👑 Crown at Risk';
+            if (champ.defenses > 0) {
+                h += ' — ⚠️ ' + champ.defenses + '-Defense Streak';
+            }
+            h += '</span></div>';
+            h += '<div class="countdown"><div class="countdown-label">SUBMISSIONS CLOSE IN</div>';
+            h += '<div class="countdown-time" data-deadline="' + featured.subDeadline + '">--:--:--</div></div>';
+            h += '<button class="btn">SUBMIT ENTRY</button></div>';
+            
+            h += '<div class="standings"><div class="section-title">STANDINGS</div>';
+            
+            for (let i = 0; i < standings.length; i++) {
+                const s = standings[i];
+                const u = users[s.userId];
+                const isChamp = s.userId === arena.championId;
+                const isYou = s.userId === currentUser.id;
+                const isLast = i === standings.length - 1;
+                
+                let cls = 'standing';
+                if (isChamp) cls += ' champion';
+                if (isYou) cls += ' you';
+                
+                h += '<div class="' + cls + '">';
+                
+                let rcls = 'rank';
+                if (s.rank === 1) rcls += ' first';
+                else if (s.rank === 2) rcls += ' second';
+                else if (s.rank === 3) rcls += ' third';
+                else rcls += ' other';
+                
+                h += '<div class="' + rcls + '">#' + s.rank + '</div>';
+                h += '<div class="player">';
+                h += '<div class="player-name">' + u.avatar + ' ' + u.name;
+                if (isChamp) h += ' 👑';
+                if (isLast) h += ' <span style="opacity:0.5">🔥</span>';
+                h += '</div>';
+                h += '<div class="player-pts">' + s.points + ' points</div>';
+                h += '</div></div>';
+            }
+            
+            h += '<button class="btn btn-sec" style="margin-top:12px;" onclick="screen=\'standings\'; render();">View Full Standings</button>';
+            h += '<button class="btn btn-sec" style="margin-top:8px;" onclick="alert(\'Daily challenges: 1x points, no crown transfer\');">Create Daily Challenge</button>';
+            h += '</div>';
+            
+            return h;
+        }
+
+        function renderIntro() {
+            return '<div class="intro">' +
+                   '<div class="intro-badge">FEATURED EVENT</div>' +
+                   '<h1 class="intro-title">DOUBLE POINTS<br>CROWN AT RISK</h1>' +
+                   '<div class="intro-sub">Get ready to compete...</div>' +
+                   '<div class="intro-count" id="introC">3</div></div>';
+        }
+
+        function startFeatured() {
+            screen = 'intro';
+            render();
+            let c = 3;
+            const t = setInterval(() => {
+                c--;
+                const el = document.getElementById('introC');
+                if (el && c > 0) el.textContent = c;
+                else clearInterval(t);
+            }, 1000);
+        }
+
+        function renderSubmit() {
+            let h = '<div style="padding:20px; min-height:100vh;">';
+            h += '<button class="btn btn-sec" style="margin-bottom:20px;" onclick="screen=\'home\'; render();">← Back</button>';
+            h += '<div class="featured-badge">⚡ FEATURED</div>';
+            h += '<h1 style="margin:12px 0;">' + featured.title + '</h1>';
+            h += '<div class="stakes" style="margin:16px 0;"><span class="stakes-text">👑 Crown at Risk</span></div>';
+            
+            // P0 #8: Opponent Submission Status
+            h += '<div style="background:#1C1C1E; border-radius:10px; padding:14px; margin:16px 0;">';
+            h += '<div style="font-size:11px; color:#8E8E93; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">SUBMISSIONS</div>';
+            
+            const submissionStatus = [
+                { userId: 'u2', submitted: true, time: '2h ago' },
+                { userId: 'u3', submitted: true, time: '45m ago' },
+                { userId: 'u4', submitted: false, time: null },
+                { userId: 'u1', submitted: false, time: null }
+            ];
+            
+            submissionStatus.forEach(s => {
+                const u = users[s.userId];
+                h += '<div style="display:flex; align-items:center; gap:10px; padding:6px 0;">';
+                h += '<span style="font-size:16px;">' + (s.submitted ? '✅' : '⏳') + '</span>';
+                h += '<span style="font-size:14px;">' + u.name + '</span>';
+                if (s.submitted) {
+                    h += '<span style="font-size:12px; color:#8E8E93; margin-left:auto;">' + s.time + '</span>';
+                }
+                h += '</div>';
+            });
+            h += '</div>';
+            
+            h += '<div class="countdown" style="margin:16px 0;"><div class="countdown-label">TIME REMAINING</div>';
+            h += '<div class="countdown-time" data-deadline="' + featured.subDeadline + '">--:--:--</div></div>';
+            h += '<label for="photo" class="btn" style="margin:16px 0;">📷 TAKE PHOTO</label>';
+            h += '<input type="file" id="photo" accept="image/*" capture="environment" style="display:none;" onchange="handlePhoto()">';
+            h += '<div id="preview"></div>';
+            h += '<button id="submitBtn" class="btn hidden" onclick="submitEntry()">SUBMIT ENTRY</button>';
+            h += '</div>';
+            return h;
+        }
+
+        function handlePhoto() {
+            const f = document.getElementById('photo').files[0];
+            if (!f) return;
+            
+            // Check file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (f.size > maxSize) {
+                showToast('Photo too large! Max 5MB. Try again.', 'error');
+                return;
+            }
+            
+            const r = new FileReader();
+            r.onload = e => {
+                const previewHTML = '<div style="position:relative;">' +
+                                   '<img src="' + e.target.result + '" style="width:100%; border-radius:14px; margin:16px 0;">' +
+                                   '<div style="position:absolute; top:24px; right:8px; background:rgba(28,28,30,0.9); padding:6px 12px; border-radius:8px; font-size:12px; color:#34C759;">✓ Great shot!</div>' +
+                                   '<button class="btn btn-sec" style="margin-top:8px;" onclick="document.getElementById(\'photo\').value=\'\'; document.getElementById(\'preview\').innerHTML=\'\'; document.getElementById(\'submitBtn\').classList.add(\'hidden\');">📷 Retake Photo</button>' +
+                                   '</div>';
+                document.getElementById('preview').innerHTML = previewHTML;
+                document.getElementById('submitBtn').classList.remove('hidden');
+                showToast('Photo ready! Looking good', 'success');
+            };
+            r.onerror = () => {
+                showToast('Failed to load photo. Try again.', 'error');
+            };
+            r.readAsDataURL(f);
+        }
+
+        function submitEntry() {
+            const submitBtn = document.getElementById('submitBtn');
+            if (!submitBtn) return;
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Submitting...';
+            submitBtn.style.opacity = '0.6';
+            
+            setTimeout(() => {
+                // Capture the actual user photo
+                const photoUrl = document.getElementById('preview').querySelector('img')?.src;
+                
+                // For demo: Create realistic looking "submissions" from other users
+                const mockPhotos = {
+                    'u2': generateMockPhoto('🦁', '#D4AF37', 'Jason'),
+                    'u3': generateMockPhoto('🌟', '#C0C0C0', 'Sarah'),
+                    'u4': generateMockPhoto('⚡', '#CD7F32', 'Mike')
+                };
+                
+                console.log('[DEBUG] Created mock photos:', Object.keys(mockPhotos));
+                
+                subs = {
+                    'u1': { imageData: photoUrl || generateMockPhoto('👤', '#2C2C2E', 'You') },
+                    'u2': mockPhotos['u2'],
+                    'u3': mockPhotos['u3'],
+                    'u4': mockPhotos['u4']
+                };
+                
+                console.log('[DEBUG] Submissions created:', Object.keys(subs));
+                console.log('[DEBUG] Your photo URL:', photoUrl ? 'Uploaded' : 'Generated mock');
+                
+                // Show success toast
+                showToast('Photo submitted!', 'success');
+                
+                // CRITICAL FIX: Reset voting deadline to NOW so timer starts fresh
+                if (demoMode) {
+                    featured.voteDeadline = Date.now() + (300 * 1000); // 5 minutes from NOW (was 2 min)
+                }
+                
+                timerAutoAdvanceTriggered = false;
+                screen = 'voting';
+                render();
+            }, 800); // Simulated network delay
+        }
+
+        function generateMockPhoto(emoji, color, name) {
+            console.log('[DEBUG] Generating mock photo for:', name, 'color:', color);
+            
+            try {
+                // Generate a canvas-based mock photo that looks like a real submission
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 400;
+                const ctx = canvas.getContext('2d');
+                
+                if (!ctx) {
+                    console.error('[DEBUG] Failed to get canvas context');
+                    return getFallbackImage(emoji, color, name);
+                }
+                
+                // Gradient background
+                const gradient = ctx.createLinearGradient(0, 0, 400, 400);
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, shadeColor(color, -30));
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 400, 400);
+                
+                // Add emoji
+                ctx.font = '120px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(emoji, 200, 200);
+                
+                // Add subtle text at bottom
+                ctx.font = '14px Arial';
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fillText(name + "'s entry", 200, 370);
+                
+                const dataURL = canvas.toDataURL();
+                console.log('[DEBUG] Generated photo, length:', dataURL.length);
+                return dataURL;
+            } catch (error) {
+                console.error('[DEBUG] Error generating mock photo:', error);
+                return getFallbackImage(emoji, color, name);
+            }
+        }
+
+        function getFallbackImage(emoji, color, name) {
+            // SVG fallback that definitely works
+            const svg = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:${shadeColor(color, -30)};stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <rect width="400" height="400" fill="url(#grad)"/>
+                <text x="200" y="200" font-size="120" text-anchor="middle" dominant-baseline="middle">${emoji}</text>
+                <text x="200" y="370" font-size="14" text-anchor="middle" fill="rgba(255,255,255,0.4)">${name}'s entry</text>
+            </svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(svg);
+        }
+
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace('#',''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 +
+                (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255))
+                .toString(16).slice(1);
+        }
+
+        function renderVoting() {
+            console.log('[DEBUG] renderVoting called');
+            console.log('[DEBUG] subs object:', subs);
+            console.log('[DEBUG] subs keys:', Object.keys(subs));
+            
+            // Check each submission
+            for (const uid in subs) {
+                console.log('[DEBUG] Sub ' + uid + ':', subs[uid] ? 'exists' : 'MISSING', 
+                           subs[uid]?.imageData ? ('image: ' + subs[uid].imageData.substring(0, 50)) : 'NO IMAGE');
+            }
+            
+            let h = '<div style="min-height:100vh;">';
+            h += '<div style="padding:20px;">';
+            h += '<div class="featured-badge">🟣 VOTING</div>';
+            h += '<h1 style="margin:12px 0;">Rank Top 3</h1>';
+            
+            // Helpful info box
+            h += '<div style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); border-radius:8px; padding:10px; margin:12px 0; font-size:12px; text-align:center; color:#D4AF37;">';
+            h += '📸 Review all submissions and rank your top 3<br><span style="color:#8E8E93;">(You cannot vote for yourself)</span>';
+            h += '</div>';
+            
+            h += '<div class="stakes" style="margin:16px 0;"><div style="flex:1;">';
+            h += '<div style="font-size:10px; color:#8E8E93; margin-bottom:4px;">SCORING</div>';
+            h += '<div style="font-size:12px;"><span style="color:#D4AF37">🥇 3pts</span> · <span style="color:#C0C0C0">🥈 2pts</span> · <span style="color:#CD7F32">🥉 1pt</span></div>';
+            h += '</div></div>';
+            h += '<div class="countdown" style="margin:16px 0;"><div class="countdown-label">VOTING ENDS IN</div>';
+            h += '<div class="countdown-time" data-deadline="' + featured.voteDeadline + '">--:--:--</div></div>';
+            h += '</div>';
+            
+            h += '<div class="vote-grid">';
+            for (const uid in subs) {
+                if (uid === currentUser.id) continue;
+                const s = subs[uid];
+                const u = users[uid];
+                
+                console.log('[DEBUG] Rendering vote card for:', u.name, 'image length:', s.imageData ? s.imageData.length : 'MISSING');
+                
+                let cls = 'vote-card';
+                if (ranks.first === uid) cls += ' rank-1';
+                else if (ranks.second === uid) cls += ' rank-2';
+                else if (ranks.third === uid) cls += ' rank-3';
+                
+                h += '<div class="' + cls + '">';
+                // Show the actual submitted photo
+                h += '<img src="' + s.imageData + '" class="vote-img" style="display:block; width:100%; height:280px; object-fit:cover; border-radius:8px 8px 0 0; background:#2C2C2E;" onerror="console.error(\'Image load error for\', this.src.substring(0,50));">';
+                h += '<div class="vote-info">';
+                h += '<div class="vote-name">' + u.avatar + ' ' + u.name + '</div>';
+                h += '<div class="rank-btns">';
+                h += '<button class="rank-btn ' + (ranks.first === uid ? 'sel-1' : '') + '" onclick="selectRank(\'' + uid + '\', \'first\')">🥇</button>';
+                h += '<button class="rank-btn ' + (ranks.second === uid ? 'sel-2' : '') + '" onclick="selectRank(\'' + uid + '\', \'second\')">🥈</button>';
+                h += '<button class="rank-btn ' + (ranks.third === uid ? 'sel-3' : '') + '" onclick="selectRank(\'' + uid + '\', \'third\')">🥉</button>';
+                h += '</div></div></div>';
+            }
+            h += '</div>';
+            
+            const canSubmit = ranks.first && ranks.second && ranks.third;
+            h += '<div style="padding:20px;">';
+            
+            // Demo mode helper
+            if (demoMode) {
+                h += '<div style="background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); border-radius:8px; padding:12px; margin-bottom:16px; text-align:center; font-size:12px; color:#FFD700;">';
+                h += '💡 DEMO MODE: Select your rankings to continue, or wait for timer to auto-advance';
+                h += '</div>';
+            }
+            
+            h += '<button class="btn" id="submitBallot" onclick="showBallotConfirm()" ' + (!canSubmit ? 'disabled' : '') + '>SUBMIT BALLOT</button>';
+            h += '</div></div>';
+            return h;
+        }
+
+        function showBallotConfirm() {
+            // P1 #15: Confirm Ballot Review
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            let content = '<div class="modal-box" onclick="event.stopPropagation();">';
+            content += '<div class="modal-title">Confirm Your Ballot</div>';
+            content += '<div class="modal-body">';
+            
+            content += '<div style="background:#0E0E11; border-radius:10px; padding:16px; margin-bottom:16px;">';
+            
+            const rankings = [
+                { rank: 'first', medal: '🥇', label: '1st Place', color: '#D4AF37' },
+                { rank: 'second', medal: '🥈', label: '2nd Place', color: '#C0C0C0' },
+                { rank: 'third', medal: '🥉', label: '3rd Place', color: '#CD7F32' }
+            ];
+            
+            rankings.forEach(r => {
+                const uid = ranks[r.rank];
+                const user = users[uid];
+                const submission = subs[uid];
+                
+                content += '<div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #2C2C2E; background:#1C1C1E; border-radius:8px; margin-bottom:8px;">';
+                
+                // Show photo thumbnail
+                content += '<img src="' + submission.imageData + '" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid ' + r.color + ';">';
+                
+                content += '<span style="font-size:24px;">' + r.medal + '</span>';
+                content += '<div style="flex:1;">';
+                content += '<div style="font-size:13px; color:#8E8E93;">' + r.label + '</div>';
+                content += '<div style="font-size:16px; font-weight:600; color:' + r.color + ';">' + user.name + '</div>';
+                content += '</div></div>';
+            });
+            
+            content += '</div>';
+            content += '<div style="font-size:13px; color:#8E8E93; text-align:center; margin-bottom:16px;">Once submitted, your ballot cannot be changed.</div>';
+            content += '</div>';
+            content += '<button class="btn" onclick="confirmSubmitBallot()">Confirm & Submit</button>';
+            content += '<button class="btn btn-sec" style="margin-top:8px;" onclick="this.parentElement.parentElement.remove()">Change Votes</button>';
+            content += '</div>';
+            
+            modal.innerHTML = content;
+            document.body.appendChild(modal);
+        }
+
+        function confirmSubmitBallot() {
+            const modal = document.querySelector('.modal');
+            const confirmBtn = modal.querySelector('.btn');
+            
+            // Show loading state
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = 'Recording vote...';
+            confirmBtn.style.opacity = '0.6';
+            
+            setTimeout(() => {
+                modal.remove();
+                
+                // Original submit logic
+                if (!ranks.first || !ranks.second || !ranks.third) return;
+                ballots[currentUser.id] = ranks;
+                ballots['u2'] = { first: 'u3', second: 'u1', third: 'u4' };
+                ballots['u3'] = { first: 'u1', second: 'u2', third: 'u4' };
+                ballots['u4'] = { first: 'u1', second: 'u3', third: 'u2' };
+                
+                // Show success toast
+                showToast('Ballot recorded!', 'success');
+                
+                // P0 #3: Post-Vote Prediction Moment
+                showTallyingMoment();
+            }, 600);
+        }
+
+        function selectRank(uid, rank) {
+            if (ranks[rank]) ranks[rank] = null;
+            for (const r in ranks) if (ranks[r] === uid) ranks[r] = null;
+            ranks[rank] = uid;
+            sounds.voteClick(); // P0 #1: Vote click sound
+            render();
+        }
+
+        function showTallyingMoment() {
+            const overlay = document.createElement('div');
+            overlay.className = 'movement-over';
+            overlay.style.animation = 'none';
+            overlay.style.opacity = '1';
+            
+            const firstPick = users[ranks.first].name;
+            
+            overlay.innerHTML = '<div style="text-align:center;">' +
+                               '<div style="font-size:48px; margin-bottom:20px;">✓</div>' +
+                               '<div class="movement-text" style="margin-bottom:12px;">Ballot Locked</div>' +
+                               '<div style="font-size:16px; color:#8E8E93; margin-bottom:24px;">Tallying votes...</div>' +
+                               '<div style="font-size:14px; color:#666;">You ranked ' + firstPick + ' 1st.<br>Will they win?</div>' +
+                               '</div>';
+            
+            document.body.appendChild(overlay);
+            
+            setTimeout(() => {
+                overlay.remove();
+                screen = 'results';
+                render();
+            }, 2500);
+        }
+
+        function renderResults() {
+            const scores = {};
+            const firstVotes = {};
+            for (const vid in ballots) {
+                const b = ballots[vid];
+                scores[b.first] = (scores[b.first]||0) + 3;
+                scores[b.second] = (scores[b.second]||0) + 2;
+                scores[b.third] = (scores[b.third]||0) + 1;
+                firstVotes[b.first] = (firstVotes[b.first]||0) + 1;
+            }
+            
+            const sorted = Object.entries(scores).sort((a,b) => {
+                if (b[1] !== a[1]) return b[1] - a[1];
+                return (firstVotes[b[0]]||0) - (firstVotes[a[0]]||0);
+            });
+            
+            const podium = sorted.slice(0, 3);
+            const winner = podium[0][0];
+            
+            let h = '<div class="results">';
+            
+            if (podium[2]) {
+                h += '<div class="podium-place" style="animation-delay:0s;">';
+                h += '<div class="place-label">THIRD PLACE</div>';
+                h += '<div class="place-medal">🥉</div>';
+                h += '<img src="' + subs[podium[2][0]].imageData + '" class="place-img" style="width:180px; height:180px; object-fit:cover; border-radius:12px; border:3px solid #CD7F32;">';
+                h += '<div class="place-name" style="color:#CD7F32;">' + users[podium[2][0]].name + '</div>';
+                h += '<div class="place-pts">' + podium[2][1] + ' points</div>';
+                h += '</div>';
+            }
+            
+            if (podium[1]) {
+                h += '<div class="podium-place" style="animation-delay:1.2s;">';
+                h += '<div class="place-label">SECOND PLACE</div>';
+                h += '<div class="place-medal">🥈</div>';
+                h += '<img src="' + subs[podium[1][0]].imageData + '" class="place-img" style="width:180px; height:180px; object-fit:cover; border-radius:12px; border:3px solid #C0C0C0;">';
+                h += '<div class="place-name" style="color:#C0C0C0;">' + users[podium[1][0]].name + '</div>';
+                h += '<div class="place-pts">' + podium[1][1] + ' points</div>';
+                h += '</div>';
+            }
+            
+            h += '<div class="podium-place" style="animation-delay:2.5s;">';
+            h += '<div class="place-label">FIRST PLACE</div>';
+            h += '<div class="place-medal">🥇</div>';
+            h += '<img src="' + subs[podium[0][0]].imageData + '" class="place-img" style="width:180px; height:180px; object-fit:cover; border-radius:12px; border:3px solid #D4AF37;">';
+            h += '<div class="place-name" style="color:#D4AF37;">' + users[podium[0][0]].name + '</div>';
+            h += '<div class="place-pts">' + podium[0][1] + ' points</div>';
+            h += '</div>';
+            
+            h += '<button class="btn" style="margin-top:30px; animation-delay:4s; opacity:0; animation:reveal 0.8s ease 4s forwards;" onclick="finishResults(\'' + winner + '\')">Continue</button>';
+            h += '</div>';
+            return h;
+        }
+
+        function animateResults() {
+            // SHOULD DO #7: Differentiated podium sounds
+            setTimeout(() => sounds.podium(3), 100);      // Third place - 200Hz
+            setTimeout(() => sounds.podium(2), 1300);     // Second place - 220Hz
+            setTimeout(() => sounds.podium(1), 2600);     // First place - 250Hz (louder)
+            
+            setTimeout(() => {
+                createConfetti();
+                sounds.confetti();
+            }, 3000);
+            
+            // P0 #5: Close Call Detection
+            setTimeout(() => checkCloseCall(), 4500);
+        }
+
+        function checkCloseCall() {
+            const scores = {};
+            const firstVotes = {};
+            for (const vid in ballots) {
+                const b = ballots[vid];
+                scores[b.first] = (scores[b.first]||0) + 3;
+                scores[b.second] = (scores[b.second]||0) + 2;
+                scores[b.third] = (scores[b.third]||0) + 1;
+                firstVotes[b.first] = (firstVotes[b.first]||0) + 1;
+            }
+            const sorted = Object.entries(scores).sort((a,b) => {
+                if (b[1] !== a[1]) return b[1] - a[1];
+                return (firstVotes[b[0]]||0) - (firstVotes[a[0]]||0);
+            });
+            const margin = sorted[0][1] - sorted[1][1];
+            
+            if (margin <= 2) {
+                const overlay = document.createElement('div');
+                overlay.className = 'movement-over';
+                overlay.innerHTML = '<div style="text-align:center;">' +
+                                   '<div style="font-size:56px; margin-bottom:16px;">⚡</div>' +
+                                   '<div class="movement-text" style="color:#FFD700;">CLOSE CALL</div>' +
+                                   '<div style="font-size:18px; color:#8E8E93; margin-top:12px;">' +
+                                   users[sorted[0][0]].name + ' wins by ' + margin + ' point' + (margin === 1 ? '' : 's') + '!</div>' +
+                                   '</div>';
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.remove(), 2000);
+            }
+        }
+
+        function createConfetti() {
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            for (let i = 0; i < 40; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 2 + 's';
+                c.appendChild(p);
+            }
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 4000);
+        }
+
+        function finishResults(winner) {
+            const prevChamp = arena.championId;
+            const transfer = winner !== prevChamp;
+            
+            // P1 #6: Show Vote Distribution First
+            showVoteDistribution(winner, transfer);
+        }
+
+        function showVoteDistribution(winner, crownTransfer) {
+            // Calculate vote breakdown
+            const breakdown = {};
+            for (const vid in ballots) {
+                const b = ballots[vid];
+                [b.first, b.second, b.third].forEach(uid => {
+                    if (!breakdown[uid]) breakdown[uid] = { first: 0, second: 0, third: 0 };
+                });
+                breakdown[b.first].first++;
+                breakdown[b.second].second++;
+                breakdown[b.third].third++;
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            let content = '<div class="modal-box" onclick="event.stopPropagation();" style="max-width:420px;">';
+            content += '<div class="modal-title">Vote Breakdown</div>';
+            content += '<div class="modal-body" style="color:#F5F5F7; max-height:300px; overflow-y:auto;">';
+            
+            // Sort by total score
+            const sorted = Object.entries(breakdown).sort((a,b) => {
+                const scoreA = a[1].first * 3 + a[1].second * 2 + a[1].third;
+                const scoreB = b[1].first * 3 + b[1].second * 2 + b[1].third;
+                return scoreB - scoreA;
+            });
+            
+            sorted.forEach(([uid, votes]) => {
+                const u = users[uid];
+                content += '<div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid #2C2C2E; background:' + (uid === winner ? 'rgba(212,175,55,0.1)' : 'transparent') + '; border-radius:8px; margin-bottom:4px;">';
+                content += '<span style="font-weight:600; font-size:15px;">' + u.avatar + ' ' + u.name + '</span>';
+                content += '<span style="font-size:13px; color:#8E8E93; display:flex; gap:8px;">';
+                if (votes.first > 0) content += '<span style="color:#D4AF37; font-weight:600;">🥇×' + votes.first + '</span>';
+                if (votes.second > 0) content += '<span style="color:#C0C0C0; font-weight:600;">🥈×' + votes.second + '</span>';
+                if (votes.third > 0) content += '<span style="color:#CD7F32; font-weight:600;">🥉×' + votes.third + '</span>';
+                content += '</span></div>';
+            });
+            
+            content += '</div>';
+            content += '<button class="btn" onclick="proceedAfterVoteBreakdown(' + crownTransfer + ', \'' + winner + '\')">Continue</button>';
+            content += '</div>';
+            
+            modal.innerHTML = content;
+            document.body.appendChild(modal);
+        }
+
+        function proceedAfterVoteBreakdown(transfer, winner) {
+            document.querySelector('.modal').remove();
+            
+            if (transfer) {
+                // P1 #9: Dethronement Share Frame
+                showDethronementFrame(winner);
+            } else {
+                // Champion defended
+                users[arena.championId].defenses = (users[arena.championId].defenses||0) + 1;
+                updateStandings();
+            }
+        }
+
+        function showDethronementFrame(winner) {
+            const prevChamp = users[arena.championId];
+            const newChamp = users[winner];
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.background = 'rgba(14, 14, 17, 0.98)';
+            
+            let content = '<div class="modal-box" onclick="event.stopPropagation();" style="max-width:500px; background:linear-gradient(135deg, #1C1C1E, #2C2C2E); border:2px solid #D4AF37;">';
+            content += '<div style="text-align:center; padding:20px 0;">';
+            content += '<div style="font-size:14px; color:#D4AF37; text-transform:uppercase; letter-spacing:3px; margin-bottom:20px;">DETHRONEMENT</div>';
+            content += '<div style="font-size:48px; margin-bottom:20px;">👑</div>';
+            
+            content += '<div style="font-size:18px; color:#8E8E93; margin-bottom:8px;">' + prevChamp.name + '</div>';
+            content += '<div style="font-size:13px; color:#666; margin-bottom:16px;">(' + (prevChamp.defenses || 0) + ' defense' + (prevChamp.defenses === 1 ? '' : 's') + ')</div>';
+            
+            content += '<div style="font-size:32px; color:#D4AF37; margin:20px 0;">⬇</div>';
+            
+            content += '<div style="font-size:24px; font-weight:700; color:#D4AF37; margin-bottom:8px;">' + newChamp.name + '</div>';
+            content += '<div style="font-size:14px; color:#8E8E93;">NEW CHAMPION</div>';
+            
+            content += '</div>';
+            content += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:24px;">';
+            content += '<button class="btn btn-sec" onclick="shareScreenshot()">📸 Share</button>';
+            content += '<button class="btn" onclick="completeDethronement(\'' + winner + '\')">Continue</button>';
+            content += '</div>';
+            content += '</div>';
+            
+            modal.innerHTML = content;
+            document.body.appendChild(modal);
+        }
+
+        function shareScreenshot() {
+            alert('Screenshot functionality would integrate with native share API here.\n\nOn mobile: navigator.share()\nOn desktop: Download as image');
+        }
+
+        function completeDethronement(winner) {
+            document.querySelector('.modal').remove();
+            
+            // P2 #10: Check for revenge match
+            const isRevenge = lastMatchup.winner && lastMatchup.loser === winner && lastMatchup.winner === arena.championId;
+            
+            if (isRevenge) {
+                const revengeOverlay = document.createElement('div');
+                revengeOverlay.className = 'movement-over';
+                revengeOverlay.style.animation = 'fadeInOut 1.5s ease';
+                revengeOverlay.innerHTML = '<div style="text-align:center;">' +
+                                          '<div style="font-size:56px; margin-bottom:16px;">🔥</div>' +
+                                          '<div class="movement-text" style="color:#FF3B30;">REVENGE!</div>' +
+                                          '<div style="font-size:16px; color:#8E8E93; margin-top:12px;">You dethroned ' + users[arena.championId].name + '!</div>' +
+                                          '</div>';
+                document.body.appendChild(revengeOverlay);
+                setTimeout(() => revengeOverlay.remove(), 1500);
+            }
+            
+            // Update last matchup
+            lastMatchup = { winner: winner, loser: arena.championId };
+            
+            setTimeout(() => {
+                // SHOULD DO #6: Enhanced crown transfer with champion avatars
+                showEnhancedCrownTransfer(winner);
+            }, isRevenge ? 1500 : 0);
+        }
+
+        function showEnhancedCrownTransfer(newChampionId) {
+            const oldChampion = users[arena.championId];
+            const newChampion = users[newChampionId];
+            
+            // Step 1: Show old champion with crown (1 second)
+            const phase1 = document.createElement('div');
+            phase1.className = 'movement-over';
+            phase1.style.animation = 'none';
+            phase1.style.opacity = '1';
+            phase1.innerHTML = '<div style="text-align:center;">' +
+                              '<div style="font-size:80px; margin-bottom:16px;">' + oldChampion.avatar + '</div>' +
+                              '<div style="font-size:48px; margin-bottom:12px; animation: crownHover 0.5s ease infinite;">👑</div>' +
+                              '<div class="movement-text">' + oldChampion.name + '</div>' +
+                              '<div style="font-size:14px; color:#8E8E93; margin-top:8px;">' + (oldChampion.defenses || 0) + '-Defense Streak ENDS</div>' +
+                              '</div>';
+            document.body.appendChild(phase1);
+            
+            // Step 2: Crown lifts (at 1s)
+            setTimeout(() => {
+                sounds.crownLift();
+                const crown = document.createElement('div');
+                crown.className = 'crown-anim';
+                crown.textContent = '👑';
+                document.body.appendChild(crown);
+                
+                setTimeout(() => crown.remove(), 2000);
+            }, 1000);
+            
+            // Step 3: Remove old champion, show new (at 2s)
+            setTimeout(() => {
+                phase1.remove();
+                
+                const phase2 = document.createElement('div');
+                phase2.className = 'movement-over';
+                phase2.innerHTML = '<div style="text-align:center;">' +
+                                  '<div style="font-size:48px; margin-bottom:16px; opacity:0; animation: crownLand 0.5s ease 0.3s forwards;">👑</div>' +
+                                  '<div style="font-size:80px; margin-bottom:16px;">' + newChampion.avatar + '</div>' +
+                                  '<div class="movement-text" style="color:#D4AF37;">NEW CHAMPION</div>' +
+                                  '<div style="font-size:20px; font-weight:700; margin-top:8px;">' + newChampion.name + '</div>' +
+                                  '</div>';
+                document.body.appendChild(phase2);
+                
+                // Crown land sound
+                setTimeout(() => sounds.crownLand(), 300);
+                
+                // Remove and continue
+                setTimeout(() => {
+                    phase2.remove();
+                    arena.championId = newChampionId;
+                    users[newChampionId].defenses = 0;
+                    showMovement(newChampionId, oldChampion.id);
+                }, 2000);
+            }, 2000);
+        }
+
+        function showMovement(winner, prev) {
+            // P0 #1: Crown lift sound
+            sounds.crownLift();
+            
+            const over = document.createElement('div');
+            over.className = 'movement-over';
+            over.innerHTML = '<div style="text-align:center;">' +
+                           '<div class="movement-arrow" style="color:#D4AF37;">👑</div>' +
+                           '<div class="movement-text">CROWN TRANSFERS</div>' +
+                           '<div style="font-size:16px; color:#8E8E93; margin-top:12px;">' +
+                           users[prev].name + ' → ' + users[winner].name + '</div></div>';
+            document.body.appendChild(over);
+            
+            // P0 #1: Crown land sound
+            setTimeout(() => sounds.crownLand(), 1500);
+            
+            setTimeout(() => { over.remove(); updateStandings(); }, 2000);
+        }
+
+        function updateStandings() {
+            standings[0].points += 6;
+            standings[1].points += 4;
+            standings[2].points += 2;
+            standings.sort((a,b) => b.points - a.points);
+            standings.forEach((s,i) => s.rank = i+1);
+            
+            const myRank = standings.find(s => s.userId === currentUser.id).rank;
+            
+            // SHOULD DO #8: Ripple animation with standings preview
+            const over = document.createElement('div');
+            over.className = 'movement-over';
+            over.innerHTML = '<div style="text-align:center;">' +
+                           '<div class="movement-arrow" style="color:#34C759;">⬆</div>' +
+                           '<div class="movement-text">You moved to #' + myRank + '</div>' +
+                           '<div style="margin-top:24px; font-size:13px; color:#8E8E93;">Updated Standings</div>' +
+                           '<div id="rippleStandings" style="margin-top:16px; max-width:300px; margin-left:auto; margin-right:auto;"></div>' +
+                           '</div>';
+            document.body.appendChild(over);
+            
+            // Ripple effect - show standings one by one
+            const rippleContainer = document.getElementById('rippleStandings');
+            standings.slice(0, 4).forEach((s, index) => {
+                setTimeout(() => {
+                    const u = users[s.userId];
+                    const row = document.createElement('div');
+                    row.style.cssText = 'padding:10px; background:#1C1C1E; border-radius:8px; margin:6px 0; opacity:0; animation:fadeIn 0.3s ease forwards; font-size:14px; display:flex; justify-content:space-between; align-items:center;';
+                    row.innerHTML = '<div><span style="color:#D4AF37; font-weight:700; margin-right:8px;">#' + s.rank + '</span>' +
+                                   '<span>' + u.avatar + ' ' + u.name + '</span></div>' +
+                                   '<span style="color:#8E8E93;">' + s.points + 'pts</span>';
+                    rippleContainer.appendChild(row);
+                }, index * 150); // Stagger by 150ms
+            });
+            
+            setTimeout(() => { over.remove(); screen = 'home'; render(); }, 2500);
+        }
+
+        function renderStandings() {
+            let h = '<div style="padding:20px; min-height:100vh;">';
+            h += '<button class="btn btn-sec" style="margin-bottom:20px;" onclick="screen=\'home\'; render();">← Back</button>';
+            h += '<h1 style="margin-bottom:20px;">Season ' + season.num + ' Standings</h1>';
+            
+            for (let i = 0; i < standings.length; i++) {
+                const s = standings[i];
+                const u = users[s.userId];
+                const isChamp = s.userId === arena.championId;
+                const isYou = s.userId === currentUser.id;
+                
+                let cls = 'standing';
+                if (isChamp) cls += ' champion';
+                if (isYou) cls += ' you';
+                
+                h += '<div class="' + cls + '">';
+                
+                let rcls = 'rank';
+                if (s.rank === 1) rcls += ' first';
+                else if (s.rank === 2) rcls += ' second';
+                else if (s.rank === 3) rcls += ' third';
+                else rcls += ' other';
+                
+                h += '<div class="' + rcls + '">#' + s.rank + '</div>';
+                h += '<div class="player">';
+                h += '<div class="player-name">' + u.avatar + ' ' + u.name;
+                if (isChamp) h += ' 👑';
+                h += '</div>';
+                h += '<div class="player-pts">' + s.points + ' points';
+                if (isChamp && u.defenses) h += ' · ' + u.defenses + ' defenses';
+                h += '</div></div></div>';
+            }
+            
+            h += '</div>';
+            return h;
+        }
+
+        function showChampInfo() {
+            const champ = users[arena.championId];
+            const m = document.createElement('div');
+            m.className = 'modal';
+            m.onclick = () => m.remove();
+            m.innerHTML = '<div class="modal-box" onclick="event.stopPropagation();">' +
+                         '<div class="modal-title">👑 Current Champion</div>' +
+                         '<div class="modal-body">' +
+                         '<div style="font-size:48px; text-align:center; margin:16px 0;">' + champ.avatar + '</div>' +
+                         '<h2 style="text-align:center; color:#D4AF37; margin-bottom:6px;">' + champ.name + '</h2>' +
+                         '<div style="text-align:center; color:#8E8E93; margin-bottom:20px;">' + (champ.defenses||0) + ' Successful Defenses</div>' +
+                         '<div style="color:#8E8E93; font-size:13px;">The crown transfers only in Featured Challenges. Defend your position or dethrone the champion.</div>' +
+                         '</div>' +
+                         '<button class="btn" onclick="this.parentElement.parentElement.remove()">Close</button></div>';
+            document.body.appendChild(m);
+        }
+
+        function startTimers() {
+            setInterval(() => {
+                document.querySelectorAll('[data-deadline]').forEach(t => {
+                    const dl = parseInt(t.dataset.deadline);
+                    const rem = dl - Date.now();
+                    
+                    if (rem <= 0) { 
+                        t.textContent = '00:00:00';
+                        
+                        // DEMO MODE: Auto-advance when timer expires
+                        if (demoMode && screen === 'voting' && !timerAutoAdvanceTriggered) {
+                            timerAutoAdvanceTriggered = true;
+                            console.log('[DEMO] Timer expired on voting screen, auto-advancing in 2s...');
+                            setTimeout(() => {
+                                if (screen === 'voting') {
+                                    console.log('[DEMO] Still on voting screen, proceeding...');
+                                    // Auto-select if user hasn't picked yet
+                                    if (!ranks.first || !ranks.second || !ranks.third) {
+                                        console.log('[DEMO] Auto-selecting rankings...');
+                                        // Auto-select rankings for demo
+                                        const votableIds = Object.keys(subs).filter(id => id !== currentUser.id);
+                                        if (!ranks.first) ranks.first = votableIds[0];
+                                        if (!ranks.second) ranks.second = votableIds[1];
+                                        if (!ranks.third) ranks.third = votableIds[2];
+                                        console.log('[DEMO] Auto-selected:', ranks);
+                                    }
+                                    showBallotConfirm();
+                                } else {
+                                    console.log('[DEMO] Screen changed, not advancing');
+                                }
+                            }, 2000);
+                        }
+                        return; 
+                    }
+                    
+                    const h = Math.floor(rem / 3600000);
+                    const m = Math.floor((rem % 3600000) / 60000);
+                    const s = Math.floor((rem % 60000) / 1000);
+                    t.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+                    
+                    // P1 #7: Last Second Urgency
+                    if (rem < 10000) {
+                        t.style.color = '#FF3B30';
+                        t.style.animation = 'pulse 1s ease infinite';
+                        
+                        // Add "FINAL SECONDS" label if not already present
+                        const parent = t.parentElement;
+                        if (!parent.querySelector('.urgent-label')) {
+                            const label = document.createElement('div');
+                            label.className = 'urgent-label';
+                            label.style.cssText = 'font-size:11px; color:#FF3B30; text-transform:uppercase; letter-spacing:2px; margin-top:8px; font-weight:700;';
+                            label.textContent = '⚠️ FINAL SECONDS';
+                            parent.appendChild(label);
+                        }
+                    }
+                });
+            }, 1000);
+        }
+
+        render();
+        
+        // KEYBOARD NAVIGATION
+        document.addEventListener('keydown', (e) => {
+            // Escape to go back
+            if (e.key === 'Escape' && screen !== 'home') {
+                screen = 'home';
+                render();
+            }
+            
+            // Enter to submit (if button is enabled)
+            if (e.key === 'Enter') {
+                const submitBtn = document.querySelector('.btn:not([disabled])');
+                if (submitBtn && submitBtn.textContent.includes('SUBMIT')) {
+                    submitBtn.click();
+                }
+            }
+        });
+        
+        // ORIENTATION REMINDER (mobile only)
+        if (window.innerWidth < 768) {
+            const checkOrientation = () => {
+                if (window.innerHeight < window.innerWidth) {
+                    // Landscape mode - show reminder
+                    if (!document.getElementById('orientationReminder')) {
+                        const reminder = document.createElement('div');
+                        reminder.id = 'orientationReminder';
+                        reminder.style.cssText = 'position:fixed; top:0; left:0; right:0; background:rgba(255,149,0,0.95); padding:12px; text-align:center; z-index:10001; font-size:13px; display:flex; align-items:center; justify-content:center; gap:10px;';
+                        reminder.innerHTML = '<span style="font-size:20px;">📱</span><span>For best experience, use portrait mode</span>';
+                        document.body.appendChild(reminder);
+                    }
+                } else {
+                    // Portrait mode - remove reminder
+                    const reminder = document.getElementById('orientationReminder');
+                    if (reminder) reminder.remove();
+                }
+            };
+            window.addEventListener('resize', checkOrientation);
+            window.addEventListener('orientationchange', checkOrientation);
+            checkOrientation();
+        }
+    </script>
+</body>
+</html>
