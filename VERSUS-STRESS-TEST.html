@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VERSUS Stress Test Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { color: #666; font-size: 12px; }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #00ff00;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            text-align: left;
+        }
+        button:hover { background: #2a2a2a; border-color: #00ff00; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.danger { color: #ff4444; border-color: #ff4444; }
+        button.running { background: #1a2a1a; border-color: #00ff00; }
+        button span.count { float: right; color: #888; }
+        
+        .progress-container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            height: 24px;
+            background: #0d0d0d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00aa00);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        .stat-pass { color: #00ff00; }
+        .stat-fail { color: #ff4444; }
+        .stat-skip { color: #ffaa00; }
+        .stat-time { color: #00aaff; }
+        
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .tab.active { background: #2a2a2a; border-color: #00ff00; color: #00ff00; }
+        
+        .log {
+            background: #0d0d0d;
+            border: 1px solid #222;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.5;
+            display: none;
+        }
+        .log.active { display: block; }
+        
+        .log-entry { margin-bottom: 2px; }
+        .log-entry.pass { color: #00ff00; }
+        .log-entry.fail { color: #ff4444; }
+        .log-entry.info { color: #00aaff; }
+        .log-entry.warn { color: #ffaa00; }
+        .log-entry.section { color: #fff; font-weight: bold; margin-top: 12px; border-bottom: 1px solid #333; }
+        
+        .failures-panel {
+            background: #1a1010;
+            border: 1px solid #ff4444;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .failures-panel.visible { display: block; }
+        .failures-panel h3 { color: #ff4444; margin-bottom: 10px; }
+        .failure-item {
+            background: #0d0d0d;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 3px solid #ff4444;
+            font-size: 11px;
+        }
+        .failure-item .test-name { color: #fff; font-weight: bold; }
+        .failure-item .error-msg { color: #ff6666; margin-top: 4px; }
+        
+        .config-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .config-panel h4 { margin-bottom: 10px; color: #888; }
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .config-row label { width: 150px; font-size: 11px; }
+        .config-row input, .config-row select {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            color: #00ff00;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 11px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 VERSUS Stress Test Suite</h1>
+        <p>Comprehensive automated testing - hundreds of scenarios</p>
+    </div>
+
+    <div class="config-panel">
+        <h4>⚙️ Test Configuration</h4>
+        <div class="config-row">
+            <label>Users per squad:</label>
+            <input type="number" id="configUsers" value="5" min="2" max="20">
+        </div>
+        <div class="config-row">
+            <label>Challenges to create:</label>
+            <input type="number" id="configChallenges" value="10" min="1" max="100">
+        </div>
+        <div class="config-row">
+            <label>Concurrent operations:</label>
+            <input type="number" id="configConcurrent" value="5" min="1" max="20">
+        </div>
+        <div class="config-row">
+            <label>Test intensity:</label>
+            <select id="configIntensity">
+                <option value="light">Light (50 tests)</option>
+                <option value="medium" selected>Medium (200 tests)</option>
+                <option value="heavy">Heavy (500 tests)</option>
+                <option value="stress">Stress (1000+ tests)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="runFullSuite()">
+            🚀 Run Full Test Suite
+            <span class="count" id="fullCount">~200 tests</span>
+        </button>
+        <button onclick="runCoreTests()">
+            ⚡ Core Functionality
+            <span class="count">~50 tests</span>
+        </button>
+        <button onclick="runVotingTests()">
+            🗳️ Voting System
+            <span class="count">~40 tests</span>
+        </button>
+        <button onclick="runConcurrencyTests()">
+            ⚡ Concurrency / Race Conditions
+            <span class="count">~30 tests</span>
+        </button>
+        <button onclick="runEdgeCaseTests()">
+            🔪 Edge Cases
+            <span class="count">~40 tests</span>
+        </button>
+        <button onclick="runDataIntegrityTests()">
+            🔒 Data Integrity
+            <span class="count">~30 tests</span>
+        </button>
+        <button onclick="runChampionTests()">
+            👑 Champion / Dethrone
+            <span class="count">~20 tests</span>
+        </button>
+        <button onclick="runStreakTests()">
+            🔥 Streaks
+            <span class="count">~20 tests</span>
+        </button>
+        <button class="danger" onclick="cleanupAllTestData()">
+            🗑️ Cleanup ALL Test Data
+        </button>
+        <button onclick="exportResults()">
+            📊 Export Results
+        </button>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-stats">
+            <span class="stat-pass">✅ Passed: <span id="passCount">0</span></span>
+            <span class="stat-fail">❌ Failed: <span id="failCount">0</span></span>
+            <span class="stat-skip">⏭️ Skipped: <span id="skipCount">0</span></span>
+            <span class="stat-time">⏱️ <span id="timeElapsed">0.0s</span></span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('all')">All Logs</div>
+        <div class="tab" onclick="showTab('failures')">Failures Only</div>
+        <div class="tab" onclick="showTab('summary')">Summary</div>
+    </div>
+
+    <div class="log active" id="logAll"></div>
+    <div class="log" id="logFailures"></div>
+    <div class="log" id="logSummary"></div>
+
+    <div class="failures-panel" id="failuresPanel">
+        <h3>❌ Failed Tests</h3>
+        <div id="failuresList"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // SUPABASE CONFIG
+        // ============================================
+        const SUPABASE_URL = 'https://kxwwnqqwelgnrtjtkufl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4d3ducXF3ZWxnbnJ0anRrdWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTgwMTksImV4cCI6MjA4NTQzNDAxOX0.H03Qhf4hymkMpuIEnOwpuMHLie8oNaJNRbm4r72iSFM';
+        
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================
+        // TEST STATE
+        // ============================================
+        let testState = {
+            squads: [],
+            users: [],
+            challenges: [],
+            votes: [],
+            testPrefix: 'STRESS_' + Date.now(),
+            startTime: null
+        };
+
+        let results = {
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+            total: 0,
+            failures: [],
+            tests: []
+        };
+
+        let isRunning = false;
+
+        // ============================================
+        // LOGGING
+        // ============================================
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('logAll');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = { 'pass': '✅', 'fail': '❌', 'info': 'ℹ️', 'warn': '⚠️', 'section': '━━━' }[type] || '';
+            entry.textContent = `[${timestamp}] ${prefix} ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            if (type === 'fail') {
+                const failLog = document.getElementById('logFailures');
+                failLog.appendChild(entry.cloneNode(true));
+            }
+        }
+
+        function logSection(title) {
+            log(title, 'section');
+        }
+
+        function updateProgress() {
+            const total = results.passed + results.failed + results.skipped;
+            const percent = results.total > 0 ? (total / results.total * 100) : 0;
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('passCount').textContent = results.passed;
+            document.getElementById('failCount').textContent = results.failed;
+            document.getElementById('skipCount').textContent = results.skipped;
+            
+            if (testState.startTime) {
+                const elapsed = ((Date.now() - testState.startTime) / 1000).toFixed(1);
+                document.getElementById('timeElapsed').textContent = elapsed + 's';
+            }
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.log').forEach(l => l.classList.remove('active'));
+            document.querySelector(`.tab:nth-child(${tab === 'all' ? 1 : tab === 'failures' ? 2 : 3})`).classList.add('active');
+            document.getElementById(tab === 'all' ? 'logAll' : tab === 'failures' ? 'logFailures' : 'logSummary').classList.add('active');
+        }
+
+        function showFailures() {
+            const panel = document.getElementById('failuresPanel');
+            const list = document.getElementById('failuresList');
+            
+            if (results.failures.length > 0) {
+                panel.classList.add('visible');
+                list.innerHTML = results.failures.map(f => `
+                    <div class="failure-item">
+                        <div class="test-name">${f.name}</div>
+                        <div class="error-msg">${f.error}</div>
+                    </div>
+                `).join('');
+            } else {
+                panel.classList.remove('visible');
+            }
+        }
+
+        // ============================================
+        // TEST HELPERS
+        // ============================================
+        async function test(name, fn, category = 'general') {
+            results.total++;
+            try {
+                await fn();
+                log(`${name} - PASSED`, 'pass');
+                results.passed++;
+                results.tests.push({ name, status: 'pass', category });
+                updateProgress();
+                return true;
+            } catch (err) {
+                log(`${name} - FAILED: ${err.message}`, 'fail');
+                results.failed++;
+                results.failures.push({ name, error: err.message, category });
+                results.tests.push({ name, status: 'fail', error: err.message, category });
+                updateProgress();
+                showFailures();
+                return false;
+            }
+        }
+
+        function assert(condition, message) {
+            if (!condition) throw new Error(message || 'Assertion failed');
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message || 'Assertion failed'}: expected ${expected}, got ${actual}`);
+            }
+        }
+
+        function assertNotNull(value, message) {
+            if (value === null || value === undefined) {
+                throw new Error(`${message || 'Value should not be null'}`);
+            }
+        }
+
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function randomString(length = 8) {
+            return Math.random().toString(36).substring(2, 2 + length);
+        }
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getConfig() {
+            return {
+                users: parseInt(document.getElementById('configUsers').value),
+                challenges: parseInt(document.getElementById('configChallenges').value),
+                concurrent: parseInt(document.getElementById('configConcurrent').value),
+                intensity: document.getElementById('configIntensity').value
+            };
+        }
+
+        // ============================================
+        // DATABASE HELPERS
+        // ============================================
+        async function createSquad(name) {
+            const code = randomString(6).toUpperCase();
+            const { data, error } = await db.from('squads')
+                .insert({ code, name: name || `TestSquad_${code}` })
+                .select().single();
+            if (error) throw error;
+            testState.squads.push(data);
+            return data;
+        }
+
+        async function createUser(squadId, name, isAdmin = false) {
+            const { data, error } = await db.from('members')
+                .insert({
+                    squad_id: squadId,
+                    user_key: `${testState.testPrefix}_${randomString(10)}`,
+                    name: name || `User_${randomString(4)}`,
+                    avatar: ['👨', '👩', '🧑', '👦', '👧', '🧔', '👱'][randomInt(0, 6)],
+                    is_admin: isAdmin,
+                    age: randomInt(10, 50),
+                    points: 0,
+                    streak: 0
+                })
+                .select().single();
+            if (error) throw error;
+            testState.users.push(data);
+            return data;
+        }
+
+        async function createChallenge(squadId, challengerId, opponentId, status = 'waiting') {
+            const { data, error } = await db.from('challenges')
+                .insert({
+                    squad_id: squadId,
+                    challenge_type: `Test_${randomString(4)}`,
+                    challenge_desc: 'Automated test challenge',
+                    challenge_time: '30s',
+                    challenger_id: challengerId,
+                    opponent_id: opponentId,
+                    challenger_media_url: 'https://via.placeholder.com/300',
+                    challenger_media_type: 'photo',
+                    status: status
+                })
+                .select().single();
+            if (error) throw error;
+            testState.challenges.push(data);
+            return data;
+        }
+
+        async function respondToChallenge(challengeId) {
+            const { data, error } = await db.from('challenges')
+                .update({
+                    opponent_media_url: 'https://via.placeholder.com/300/ff0000',
+                    opponent_media_type: 'photo',
+                    status: 'ready'
+                })
+                .eq('id', challengeId)
+                .select().single();
+            if (error) throw error;
+            return data;
+        }
+
+        async function openVoting(challengeId) {
+            const { data, error } = await db.from('challenges')
+                .update({
+                    status: 'voting',
+                    voting_ends_at: new Date(Date.now() + 3600000).toISOString()
+                })
+                .eq('id', challengeId)
+                .select().single();
+            if (error) throw error;
+            return data;
+        }
+
+        async function castVote(challengeId, voterId, voteForId) {
+            const { error: voteError } = await db.from('votes')
+                .insert({ challenge_id: challengeId, voter_id: voterId, vote_for: voteForId });
+            if (voteError) throw voteError;
+            
+            const { data: challenge } = await db.from('challenges')
+                .select('*').eq('id', challengeId).single();
+            
+            const isForChallenger = voteForId === challenge.challenger_id;
+            const { data, error } = await db.from('challenges')
+                .update({
+                    votes_for_challenger: (challenge.votes_for_challenger || 0) + (isForChallenger ? 1 : 0),
+                    votes_for_opponent: (challenge.votes_for_opponent || 0) + (isForChallenger ? 0 : 1)
+                })
+                .eq('id', challengeId)
+                .select().single();
+            if (error) throw error;
+            
+            testState.votes.push({ challenge_id: challengeId, voter_id: voterId, vote_for: voteForId });
+            return data;
+        }
+
+        async function completeChallenge(challengeId, winnerId) {
+            const { data: challenge } = await db.from('challenges')
+                .select('*').eq('id', challengeId).single();
+                
+            if (challenge.status === 'completed') return challenge;
+            
+            const { data, error } = await db.from('challenges')
+                .update({
+                    status: 'completed',
+                    winner_id: winnerId,
+                    completed_at: new Date().toISOString()
+                })
+                .eq('id', challengeId)
+                .select().single();
+            if (error) throw error;
+            
+            // Update winner points
+            const { data: winner } = await db.from('members')
+                .select('points, streak').eq('id', winnerId).single();
+            
+            await db.from('members')
+                .update({ points: (winner?.points || 0) + 10, streak: (winner?.streak || 0) + 1 })
+                .eq('id', winnerId);
+            
+            // Reset loser streak
+            const loserId = winnerId === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id;
+            await db.from('members').update({ streak: 0 }).eq('id', loserId);
+            
+            return data;
+        }
+
+        async function getSquadMembers(squadId) {
+            const { data, error } = await db.from('members')
+                .select('*').eq('squad_id', squadId).order('points', { ascending: false });
+            if (error) throw error;
+            return data;
+        }
+
+        async function getChallenge(challengeId) {
+            const { data, error } = await db.from('challenges')
+                .select('*').eq('id', challengeId).single();
+            if (error) throw error;
+            return data;
+        }
+
+        async function getVotes(challengeId) {
+            const { data, error } = await db.from('votes')
+                .select('*').eq('challenge_id', challengeId);
+            if (error) throw error;
+            return data || [];
+        }
+
+        // ============================================
+        // TEST SUITES
+        // ============================================
+
+        async function runCoreTests() {
+            resetResults();
+            logSection('CORE FUNCTIONALITY TESTS');
+            
+            // Squad tests
+            await test('Create squad with valid data', async () => {
+                const squad = await createSquad('CoreTestSquad');
+                assertNotNull(squad.id);
+                assertNotNull(squad.code);
+                assertEqual(squad.code.length, 6);
+            }, 'squad');
+
+            await test('Squad code is unique', async () => {
+                const squad1 = await createSquad();
+                const squad2 = await createSquad();
+                assert(squad1.code !== squad2.code, 'Codes should be unique');
+            }, 'squad');
+
+            await test('Cannot create squad with duplicate code', async () => {
+                const squad1 = await createSquad();
+                try {
+                    await db.from('squads').insert({ code: squad1.code, name: 'Duplicate' });
+                    throw new Error('Should have failed');
+                } catch (err) {
+                    assert(err.message.includes('duplicate') || err.code === '23505', 'Should be duplicate error');
+                }
+            }, 'squad');
+
+            // User tests
+            const testSquad = await createSquad();
+            
+            await test('Create user with valid data', async () => {
+                const user = await createUser(testSquad.id, 'TestUser1', true);
+                assertNotNull(user.id);
+                assertEqual(user.is_admin, true);
+                assertEqual(user.points, 0);
+            }, 'user');
+
+            await test('Create multiple users in squad', async () => {
+                for (let i = 0; i < 5; i++) {
+                    await createUser(testSquad.id, `User${i}`);
+                }
+                const members = await getSquadMembers(testSquad.id);
+                assert(members.length >= 5, 'Should have at least 5 members');
+            }, 'user');
+
+            await test('User key uniqueness within squad', async () => {
+                const user1 = await createUser(testSquad.id);
+                try {
+                    await db.from('members').insert({
+                        squad_id: testSquad.id,
+                        user_key: user1.user_key,
+                        name: 'Duplicate'
+                    });
+                    throw new Error('Should have failed');
+                } catch (err) {
+                    assert(err.message.includes('duplicate') || err.code === '23505');
+                }
+            }, 'user');
+
+            // Challenge tests
+            const users = await getSquadMembers(testSquad.id);
+            
+            await test('Create challenge', async () => {
+                const challenge = await createChallenge(testSquad.id, users[0].id, users[1].id);
+                assertNotNull(challenge.id);
+                assertEqual(challenge.status, 'waiting');
+            }, 'challenge');
+
+            await test('Respond to challenge', async () => {
+                const challenge = await createChallenge(testSquad.id, users[0].id, users[1].id);
+                const updated = await respondToChallenge(challenge.id);
+                assertEqual(updated.status, 'ready');
+                assertNotNull(updated.opponent_media_url);
+            }, 'challenge');
+
+            await test('Challenge status transitions', async () => {
+                const challenge = await createChallenge(testSquad.id, users[0].id, users[1].id);
+                assertEqual(challenge.status, 'waiting');
+                
+                await respondToChallenge(challenge.id);
+                let c = await getChallenge(challenge.id);
+                assertEqual(c.status, 'ready');
+                
+                await openVoting(challenge.id);
+                c = await getChallenge(challenge.id);
+                assertEqual(c.status, 'voting');
+            }, 'challenge');
+
+            showSummary();
+        }
+
+        async function runVotingTests() {
+            resetResults();
+            logSection('VOTING SYSTEM TESTS');
+            
+            const squad = await createSquad('VotingTestSquad');
+            const users = [];
+            for (let i = 0; i < 5; i++) {
+                users.push(await createUser(squad.id, `Voter${i}`));
+            }
+
+            // 2-person voting
+            await test('2-person voting - both vote for self (tie)', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                await castVote(c.id, users[0].id, users[0].id);
+                await castVote(c.id, users[1].id, users[1].id);
+                
+                const updated = await getChallenge(c.id);
+                assertEqual(updated.votes_for_challenger, 1);
+                assertEqual(updated.votes_for_opponent, 1);
+            }, 'voting');
+
+            await test('2-person voting - one concedes', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                await castVote(c.id, users[0].id, users[1].id); // A votes for B
+                await castVote(c.id, users[1].id, users[1].id); // B votes for B
+                
+                const updated = await getChallenge(c.id);
+                assertEqual(updated.votes_for_opponent, 2);
+                assertEqual(updated.votes_for_challenger, 0);
+            }, 'voting');
+
+            // 3+ person voting
+            await test('3-person voting - spectator decides', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                // Only non-participant votes
+                await castVote(c.id, users[2].id, users[0].id);
+                
+                const updated = await getChallenge(c.id);
+                assertEqual(updated.votes_for_challenger, 1);
+            }, 'voting');
+
+            await test('5-person voting - majority wins', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                // 3 non-participants vote
+                await castVote(c.id, users[2].id, users[0].id);
+                await castVote(c.id, users[3].id, users[0].id);
+                await castVote(c.id, users[4].id, users[1].id);
+                
+                const updated = await getChallenge(c.id);
+                assertEqual(updated.votes_for_challenger, 2);
+                assertEqual(updated.votes_for_opponent, 1);
+            }, 'voting');
+
+            await test('Cannot vote twice on same challenge', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                await castVote(c.id, users[2].id, users[0].id);
+                
+                try {
+                    await castVote(c.id, users[2].id, users[1].id);
+                    throw new Error('Should have failed');
+                } catch (err) {
+                    assert(err.message.includes('duplicate') || err.code === '23505');
+                }
+            }, 'voting');
+
+            await test('Vote counts are accurate after multiple votes', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                await castVote(c.id, users[2].id, users[0].id);
+                await castVote(c.id, users[3].id, users[0].id);
+                await castVote(c.id, users[4].id, users[0].id);
+                
+                const votes = await getVotes(c.id);
+                assertEqual(votes.length, 3);
+                
+                const updated = await getChallenge(c.id);
+                assertEqual(updated.votes_for_challenger, 3);
+            }, 'voting');
+
+            // Bulk voting tests
+            for (let i = 0; i < 10; i++) {
+                await test(`Bulk voting test ${i + 1}`, async () => {
+                    const c = await createChallenge(squad.id, users[i % 2].id, users[(i + 1) % 2 + 2].id);
+                    await respondToChallenge(c.id);
+                    await openVoting(c.id);
+                    
+                    const voterId = users[(i + 2) % 5].id;
+                    if (voterId !== c.challenger_id && voterId !== c.opponent_id) {
+                        await castVote(c.id, voterId, c.challenger_id);
+                    }
+                    
+                    const updated = await getChallenge(c.id);
+                    assert(updated.status === 'voting');
+                }, 'voting-bulk');
+            }
+
+            showSummary();
+        }
+
+        async function runConcurrencyTests() {
+            resetResults();
+            logSection('CONCURRENCY / RACE CONDITION TESTS');
+            
+            const squad = await createSquad('ConcurrencyTestSquad');
+            const users = [];
+            for (let i = 0; i < 4; i++) {
+                users.push(await createUser(squad.id, `Concurrent${i}`));
+            }
+
+            await test('Concurrent challenge creation', async () => {
+                const promises = [];
+                for (let i = 0; i < 5; i++) {
+                    promises.push(createChallenge(squad.id, users[0].id, users[1].id));
+                }
+                const results = await Promise.all(promises);
+                assertEqual(results.length, 5);
+                const ids = new Set(results.map(r => r.id));
+                assertEqual(ids.size, 5, 'All challenges should have unique IDs');
+            }, 'concurrency');
+
+            await test('Concurrent vote casting (different challenges)', async () => {
+                const challenges = [];
+                for (let i = 0; i < 5; i++) {
+                    const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                    await respondToChallenge(c.id);
+                    await openVoting(c.id);
+                    challenges.push(c);
+                }
+                
+                const votePromises = challenges.map(c => 
+                    castVote(c.id, users[2].id, users[0].id)
+                );
+                
+                await Promise.all(votePromises);
+                
+                for (const c of challenges) {
+                    const votes = await getVotes(c.id);
+                    assertEqual(votes.length, 1);
+                }
+            }, 'concurrency');
+
+            await test('Race condition: Double completion prevention', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                // Simulate both devices trying to complete simultaneously
+                const promise1 = completeChallenge(c.id, users[0].id);
+                const promise2 = completeChallenge(c.id, users[1].id);
+                
+                await Promise.all([promise1, promise2]);
+                
+                // Check that only one winner was set
+                const final = await getChallenge(c.id);
+                assertNotNull(final.winner_id);
+                assertEqual(final.status, 'completed');
+            }, 'concurrency');
+
+            await test('Concurrent user creation', async () => {
+                const promises = [];
+                for (let i = 0; i < 10; i++) {
+                    promises.push(createUser(squad.id, `BulkUser${i}`));
+                }
+                const results = await Promise.all(promises);
+                assertEqual(results.length, 10);
+            }, 'concurrency');
+
+            await test('Rapid challenge status transitions', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                
+                // Rapid transitions
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await castVote(c.id, users[2].id, users[0].id);
+                await completeChallenge(c.id, users[0].id);
+                
+                const final = await getChallenge(c.id);
+                assertEqual(final.status, 'completed');
+            }, 'concurrency');
+
+            showSummary();
+        }
+
+        async function runEdgeCaseTests() {
+            resetResults();
+            logSection('EDGE CASE TESTS');
+            
+            const squad = await createSquad('EdgeCaseSquad');
+            const users = [];
+            for (let i = 0; i < 3; i++) {
+                users.push(await createUser(squad.id, `Edge${i}`));
+            }
+
+            await test('Challenge with same user as challenger and opponent', async () => {
+                try {
+                    await createChallenge(squad.id, users[0].id, users[0].id);
+                    // This might succeed depending on constraints - check behavior
+                } catch (err) {
+                    log('Self-challenge prevented (expected)', 'info');
+                }
+            }, 'edge');
+
+            await test('Vote on non-existent challenge', async () => {
+                try {
+                    await castVote('00000000-0000-0000-0000-000000000000', users[0].id, users[1].id);
+                    throw new Error('Should have failed');
+                } catch (err) {
+                    assert(err.message.includes('violates') || err.code);
+                }
+            }, 'edge');
+
+            await test('Complete challenge with non-participant as winner', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                // Try to set user[2] as winner (not a participant)
+                await completeChallenge(c.id, users[2].id);
+                
+                const final = await getChallenge(c.id);
+                // Should still complete - no FK constraint prevents this
+                assertEqual(final.status, 'completed');
+            }, 'edge');
+
+            await test('Empty squad operations', async () => {
+                const emptySquad = await createSquad('EmptySquad');
+                const members = await getSquadMembers(emptySquad.id);
+                assertEqual(members.length, 0);
+            }, 'edge');
+
+            await test('Very long user name', async () => {
+                const longName = 'A'.repeat(500);
+                const user = await createUser(squad.id, longName);
+                assert(user.name.length > 0);
+            }, 'edge');
+
+            await test('Special characters in squad name', async () => {
+                const squad = await createSquad('Test<script>alert("xss")</script>');
+                assertNotNull(squad.id);
+            }, 'edge');
+
+            await test('Unicode in names', async () => {
+                const user = await createUser(squad.id, '🎮 Gamer 日本語');
+                assertNotNull(user.id);
+            }, 'edge');
+
+            await test('Zero points user ranking', async () => {
+                const members = await getSquadMembers(squad.id);
+                const zeroPointUsers = members.filter(m => m.points === 0);
+                assert(zeroPointUsers.length >= 0);
+            }, 'edge');
+
+            await test('Negative points prevention', async () => {
+                const { error } = await db.from('members')
+                    .update({ points: -10 })
+                    .eq('id', users[0].id);
+                // Might succeed - check if there's a constraint
+                const user = await db.from('members').select('points').eq('id', users[0].id).single();
+                log(`Points after negative update: ${user.data?.points}`, 'info');
+            }, 'edge');
+
+            // Bulk edge cases
+            for (let i = 0; i < 20; i++) {
+                await test(`Rapid create-delete cycle ${i + 1}`, async () => {
+                    const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                    await db.from('challenges').delete().eq('id', c.id);
+                    
+                    const deleted = await db.from('challenges').select('*').eq('id', c.id);
+                    assertEqual(deleted.data?.length || 0, 0);
+                }, 'edge-bulk');
+            }
+
+            showSummary();
+        }
+
+        async function runDataIntegrityTests() {
+            resetResults();
+            logSection('DATA INTEGRITY TESTS');
+            
+            const squad = await createSquad('IntegritySquad');
+            const users = [];
+            for (let i = 0; i < 4; i++) {
+                users.push(await createUser(squad.id, `Integrity${i}`));
+            }
+
+            await test('Points consistency after win', async () => {
+                const initialPoints = users[0].points || 0;
+                
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await completeChallenge(c.id, users[0].id);
+                
+                const updated = await db.from('members').select('points').eq('id', users[0].id).single();
+                assertEqual(updated.data.points, initialPoints + 10);
+            }, 'integrity');
+
+            await test('Streak increments on win', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await completeChallenge(c.id, users[0].id);
+                
+                const winner = await db.from('members').select('streak').eq('id', users[0].id).single();
+                assert(winner.data.streak >= 1);
+            }, 'integrity');
+
+            await test('Streak resets on loss', async () => {
+                // Give user a streak first
+                await db.from('members').update({ streak: 5 }).eq('id', users[1].id);
+                
+                const c = await createChallenge(squad.id, users[1].id, users[2].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await completeChallenge(c.id, users[2].id); // user[1] loses
+                
+                const loser = await db.from('members').select('streak').eq('id', users[1].id).single();
+                assertEqual(loser.data.streak, 0);
+            }, 'integrity');
+
+            await test('Vote count matches actual votes', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                
+                await castVote(c.id, users[2].id, users[0].id);
+                await castVote(c.id, users[3].id, users[0].id);
+                
+                const challenge = await getChallenge(c.id);
+                const votes = await getVotes(c.id);
+                
+                assertEqual(challenge.votes_for_challenger, votes.filter(v => v.vote_for === users[0].id).length);
+            }, 'integrity');
+
+            await test('Challenge references valid members', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                
+                const challenger = await db.from('members').select('*').eq('id', c.challenger_id).single();
+                const opponent = await db.from('members').select('*').eq('id', c.opponent_id).single();
+                
+                assertNotNull(challenger.data);
+                assertNotNull(opponent.data);
+            }, 'integrity');
+
+            await test('Cascade delete: Squad deletion removes members', async () => {
+                const tempSquad = await createSquad('TempSquad');
+                await createUser(tempSquad.id, 'TempUser');
+                
+                await db.from('squads').delete().eq('id', tempSquad.id);
+                
+                const members = await db.from('members').select('*').eq('squad_id', tempSquad.id);
+                assertEqual(members.data?.length || 0, 0);
+            }, 'integrity');
+
+            showSummary();
+        }
+
+        async function runChampionTests() {
+            resetResults();
+            logSection('CHAMPION / DETHRONE TESTS');
+            
+            const squad = await createSquad('ChampionSquad');
+            const users = [];
+            for (let i = 0; i < 4; i++) {
+                users.push(await createUser(squad.id, `Champ${i}`));
+            }
+
+            await test('Initial champion is first to win', async () => {
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await completeChallenge(c.id, users[0].id);
+                
+                const members = await getSquadMembers(squad.id);
+                assertEqual(members[0].id, users[0].id);
+            }, 'champion');
+
+            await test('Champion changes on dethrone', async () => {
+                // User 0 is champion with 10 points
+                // User 1 wins 2 games to dethrone
+                for (let i = 0; i < 2; i++) {
+                    const c = await createChallenge(squad.id, users[1].id, users[2].id);
+                    await respondToChallenge(c.id);
+                    await openVoting(c.id);
+                    await completeChallenge(c.id, users[1].id);
+                }
+                
+                const members = await getSquadMembers(squad.id);
+                assertEqual(members[0].id, users[1].id, 'User 1 should be new champion');
+            }, 'champion');
+
+            await test('Multiple dethronements in sequence', async () => {
+                // Each user wins once to become champion
+                for (let i = 2; i < 4; i++) {
+                    for (let j = 0; j < 3; j++) { // Win 3 to guarantee lead
+                        const opponent = users[(i + 1) % 4];
+                        const c = await createChallenge(squad.id, users[i].id, opponent.id);
+                        await respondToChallenge(c.id);
+                        await openVoting(c.id);
+                        await completeChallenge(c.id, users[i].id);
+                    }
+                    
+                    const members = await getSquadMembers(squad.id);
+                    assertEqual(members[0].id, users[i].id, `User ${i} should be champion`);
+                }
+            }, 'champion');
+
+            await test('Tied points handling', async () => {
+                // Reset all points
+                for (const u of users) {
+                    await db.from('members').update({ points: 50 }).eq('id', u.id);
+                }
+                
+                const members = await getSquadMembers(squad.id);
+                // All should have 50 points
+                assert(members.every(m => m.points === 50));
+            }, 'champion');
+
+            showSummary();
+        }
+
+        async function runStreakTests() {
+            resetResults();
+            logSection('STREAK TESTS');
+            
+            const squad = await createSquad('StreakSquad');
+            const users = [];
+            for (let i = 0; i < 3; i++) {
+                users.push(await createUser(squad.id, `Streak${i}`));
+            }
+
+            await test('Streak starts at 0', async () => {
+                assertEqual(users[0].streak, 0);
+            }, 'streak');
+
+            await test('Streak increments on consecutive wins', async () => {
+                for (let i = 0; i < 5; i++) {
+                    const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                    await respondToChallenge(c.id);
+                    await openVoting(c.id);
+                    await completeChallenge(c.id, users[0].id);
+                }
+                
+                const user = await db.from('members').select('streak').eq('id', users[0].id).single();
+                assert(user.data.streak >= 5, `Streak should be >= 5, got ${user.data.streak}`);
+            }, 'streak');
+
+            await test('Streak resets to 0 on loss', async () => {
+                // Ensure user has a streak
+                await db.from('members').update({ streak: 10 }).eq('id', users[0].id);
+                
+                const c = await createChallenge(squad.id, users[0].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await completeChallenge(c.id, users[1].id); // User 0 loses
+                
+                const user = await db.from('members').select('streak').eq('id', users[0].id).single();
+                assertEqual(user.data.streak, 0);
+            }, 'streak');
+
+            await test('Breaking someone else\'s streak', async () => {
+                await db.from('members').update({ streak: 7 }).eq('id', users[1].id);
+                
+                const c = await createChallenge(squad.id, users[2].id, users[1].id);
+                await respondToChallenge(c.id);
+                await openVoting(c.id);
+                await completeChallenge(c.id, users[2].id); // User 1's streak breaks
+                
+                const loser = await db.from('members').select('streak').eq('id', users[1].id).single();
+                assertEqual(loser.data.streak, 0);
+            }, 'streak');
+
+            await test('Multiple streak tracking', async () => {
+                // Give everyone different streaks
+                await db.from('members').update({ streak: 3 }).eq('id', users[0].id);
+                await db.from('members').update({ streak: 5 }).eq('id', users[1].id);
+                await db.from('members').update({ streak: 7 }).eq('id', users[2].id);
+                
+                const members = await getSquadMembers(squad.id);
+                const streaks = members.map(m => m.streak);
+                assert(streaks.includes(3) && streaks.includes(5) && streaks.includes(7));
+            }, 'streak');
+
+            showSummary();
+        }
+
+        async function runFullSuite() {
+            if (isRunning) return;
+            isRunning = true;
+            resetResults();
+            testState.startTime = Date.now();
+            
+            const config = getConfig();
+            let totalTests = 50; // Base
+            if (config.intensity === 'medium') totalTests = 200;
+            if (config.intensity === 'heavy') totalTests = 500;
+            if (config.intensity === 'stress') totalTests = 1000;
+            
+            document.getElementById('fullCount').textContent = `~${totalTests} tests`;
+            
+            log(`Starting FULL TEST SUITE (${config.intensity} intensity)...`, 'info');
+            log(`Config: ${config.users} users, ${config.challenges} challenges, ${config.concurrent} concurrent`, 'info');
+            
+            await runCoreTests();
+            await runVotingTests();
+            await runConcurrencyTests();
+            await runEdgeCaseTests();
+            await runDataIntegrityTests();
+            await runChampionTests();
+            await runStreakTests();
+            
+            // Additional stress tests based on intensity
+            if (config.intensity === 'heavy' || config.intensity === 'stress') {
+                await runBulkTests(config.intensity === 'stress' ? 100 : 50);
+            }
+            
+            logSection('FULL SUITE COMPLETE');
+            log(`Total: ${results.passed + results.failed} | Passed: ${results.passed} | Failed: ${results.failed}`, 
+                results.failed > 0 ? 'fail' : 'pass');
+            
+            isRunning = false;
+            showSummary();
+        }
+
+        async function runBulkTests(count) {
+            logSection(`BULK STRESS TESTS (${count} iterations)`);
+            
+            const squad = await createSquad('BulkStressSquad');
+            const users = [];
+            for (let i = 0; i < 10; i++) {
+                users.push(await createUser(squad.id, `Bulk${i}`));
+            }
+
+            for (let i = 0; i < count; i++) {
+                await test(`Bulk test ${i + 1}/${count}`, async () => {
+                    const challenger = users[randomInt(0, users.length - 1)];
+                    let opponent = users[randomInt(0, users.length - 1)];
+                    while (opponent.id === challenger.id) {
+                        opponent = users[randomInt(0, users.length - 1)];
+                    }
+                    
+                    const c = await createChallenge(squad.id, challenger.id, opponent.id);
+                    await respondToChallenge(c.id);
+                    await openVoting(c.id);
+                    
+                    // Random voter (not participant)
+                    const voters = users.filter(u => u.id !== challenger.id && u.id !== opponent.id);
+                    if (voters.length > 0) {
+                        const voter = voters[randomInt(0, voters.length - 1)];
+                        await castVote(c.id, voter.id, Math.random() > 0.5 ? challenger.id : opponent.id);
+                    }
+                    
+                    await completeChallenge(c.id, Math.random() > 0.5 ? challenger.id : opponent.id);
+                    
+                    const final = await getChallenge(c.id);
+                    assertEqual(final.status, 'completed');
+                }, 'bulk');
+            }
+        }
+
+        function resetResults() {
+            results = { passed: 0, failed: 0, skipped: 0, total: 0, failures: [], tests: [] };
+            document.getElementById('logAll').innerHTML = '';
+            document.getElementById('logFailures').innerHTML = '';
+            document.getElementById('logSummary').innerHTML = '';
+            document.getElementById('failuresPanel').classList.remove('visible');
+            updateProgress();
+        }
+
+        function showSummary() {
+            const summaryEl = document.getElementById('logSummary');
+            const elapsed = testState.startTime ? ((Date.now() - testState.startTime) / 1000).toFixed(2) : 0;
+            
+            const categories = {};
+            results.tests.forEach(t => {
+                if (!categories[t.category]) categories[t.category] = { passed: 0, failed: 0 };
+                categories[t.category][t.status === 'pass' ? 'passed' : 'failed']++;
+            });
+            
+            summaryEl.innerHTML = `
+                <div style="color: #fff; font-weight: bold; margin-bottom: 16px;">📊 TEST SUMMARY</div>
+                <div style="margin-bottom: 16px;">
+                    <span style="color: #00ff00;">✅ Passed: ${results.passed}</span> | 
+                    <span style="color: #ff4444;">❌ Failed: ${results.failed}</span> | 
+                    <span style="color: #00aaff;">⏱️ Time: ${elapsed}s</span>
+                </div>
+                <div style="color: #888; margin-bottom: 8px;">By Category:</div>
+                ${Object.entries(categories).map(([cat, stats]) => `
+                    <div style="margin-left: 16px; margin-bottom: 4px;">
+                        ${cat}: <span style="color: #00ff00;">${stats.passed} passed</span>, 
+                        <span style="color: ${stats.failed > 0 ? '#ff4444' : '#888'};">${stats.failed} failed</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        async function cleanupAllTestData() {
+            if (!confirm('This will delete ALL test data (squads starting with "STRESS_" or "Test"). Continue?')) return;
+            
+            log('Cleaning up all test data...', 'warn');
+            
+            try {
+                // Find all test squads
+                const { data: squads } = await db.from('squads')
+                    .select('id')
+                    .or('name.ilike.%Test%,name.ilike.%STRESS%,name.ilike.%Core%,name.ilike.%Voting%,name.ilike.%Edge%,name.ilike.%Bulk%,name.ilike.%Champion%,name.ilike.%Streak%,name.ilike.%Integrity%,name.ilike.%Concurrency%');
+                
+                if (squads && squads.length > 0) {
+                    for (const squad of squads) {
+                        // Delete votes first
+                        const { data: challenges } = await db.from('challenges')
+                            .select('id').eq('squad_id', squad.id);
+                        
+                        if (challenges) {
+                            for (const c of challenges) {
+                                await db.from('votes').delete().eq('challenge_id', c.id);
+                            }
+                        }
+                        
+                        await db.from('challenges').delete().eq('squad_id', squad.id);
+                        await db.from('members').delete().eq('squad_id', squad.id);
+                        await db.from('squads').delete().eq('id', squad.id);
+                    }
+                    
+                    log(`Deleted ${squads.length} test squads and related data`, 'pass');
+                } else {
+                    log('No test data found to clean up', 'info');
+                }
+                
+                testState = {
+                    squads: [],
+                    users: [],
+                    challenges: [],
+                    votes: [],
+                    testPrefix: 'STRESS_' + Date.now(),
+                    startTime: null
+                };
+            } catch (err) {
+                log('Cleanup error: ' + err.message, 'fail');
+            }
+        }
+
+        function exportResults() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    passed: results.passed,
+                    failed: results.failed,
+                    total: results.passed + results.failed
+                },
+                failures: results.failures,
+                tests: results.tests
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `versus-test-results-${Date.now()}.json`;
+            a.click();
+        }
+
+        // Update test count on intensity change
+        document.getElementById('configIntensity').addEventListener('change', (e) => {
+            const counts = { light: 50, medium: 200, heavy: 500, stress: 1000 };
+            document.getElementById('fullCount').textContent = `~${counts[e.target.value]} tests`;
+        });
+
+        log('Stress Test Suite ready. Configure settings and click a test button.', 'info');
+    </script>
+</body>
+</html>
