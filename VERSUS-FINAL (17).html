@@ -1,0 +1,2605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VERSUS - Where Rivalries Live</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.03) 0%, transparent 50%),
+                        #000000;
+        }
+
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid #1C1C1E;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .settings-icon {
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: all 0.2s;
+        }
+
+        .settings-icon:hover {
+            opacity: 1;
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-align: center;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            text-align: center;
+            font-size: 9px;
+            color: #A1A1A6;
+            letter-spacing: 2px;
+            margin-top: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #0A0A0C;
+            border-bottom: 1px solid #1C1C1E;
+            position: sticky;
+            top: 73px;
+            z-index: 99;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 10px;
+            background: #1C1C1E;
+            border: 1px solid #2C2C2E;
+            border-radius: 8px;
+            color: #8E8E93;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-btn:hover { background: #2C2C2E; }
+        .nav-btn.active { 
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000000;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+
+        .content { padding: 24px 20px 100px; }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000000;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #2C2C2E;
+            color: #F5F5F7;
+            border: 1px solid #3C3C3E;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #8E8E93;
+            margin-bottom: 16px;
+        }
+
+        .challenges-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .challenge-tile {
+            padding: 16px;
+            background: #1C1C1E;
+            border: 2px solid #2C2C2E;
+            border-left: 4px solid #2C2C2E;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .challenge-tile-photo {
+            border-left-color: #34C759;
+        }
+
+        .challenge-tile-video {
+            border-left-color: #0A84FF;
+        }
+
+        .challenge-tile:hover {
+            border-color: #FFD700;
+            background: #2C2C2E;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+        }
+
+        .challenge-tile-photo:hover {
+            border-left-color: #34C759;
+        }
+
+        .challenge-tile-video:hover {
+            border-left-color: #0A84FF;
+        }
+
+        .challenge-name {
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.3;
+            color: #FFFFFF;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+        }
+
+        .category-tab {
+            padding: 8px 16px;
+            background: #2C2C2E;
+            border: 1px solid #3C3C3E;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-tab:hover {
+            background: #3C3C3E;
+        }
+
+        .category-tab.active {
+            background: #D4AF37;
+            color: #0A0A0C;
+            border-color: #D4AF37;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 12, 0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .reveal-container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .upload-zone {
+            background: #1C1C1E;
+            border: 2px dashed #3C3C3E;
+            border-radius: 12px;
+            padding: 48px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 24px;
+        }
+
+        .upload-zone:hover {
+            border-color: #D4AF37;
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .preview-media {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #D4AF37;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .hidden { display: none; }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #8E8E93;
+            font-size: 15px;
+            padding: 12px 0;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        /* Rankings */
+        .ladder-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: #1C1C1E;
+            border: 1px solid #2C2C2E;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .ladder-row.rank-1 {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 165, 0, 0.02) 100%);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.08);
+        }
+
+        .rank {
+            font-size: 24px;
+            font-weight: 900;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .rank-1 { 
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        .rank-2 { color: #C0C0C0; }
+        .rank-3 { color: #CD7F32; }
+
+        .avatar { 
+            font-size: 48px;
+        }
+
+        .member-info { flex: 1; }
+
+        .member-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .member-status {
+            font-size: 13px;
+            color: #8E8E93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .points {
+            font-size: 24px;
+            font-weight: 900;
+            color: #FFD700;
+        }
+
+        .streak {
+            display: inline-block;
+            background: rgba(255, 59, 48, 0.2);
+            color: #FF3B30;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 8px;
+            border: 1px solid rgba(255, 59, 48, 0.4);
+            animation: pulse-streak 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-streak {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 0 10px 2px rgba(255, 59, 48, 0.3);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-5deg); }
+            75% { transform: translate(-50%, -50%) rotate(5deg); }
+        }
+        
+        @keyframes crownPop {
+            0% { 
+                transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(10deg);
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header" id="app-header">
+            <div style="flex: 1;"></div>
+            <div style="text-align: center;">
+                <div class="logo">VERSUS</div>
+                <div class="tagline">WHERE RIVALRIES LIVE</div>
+            </div>
+            <div style="flex: 1; display: flex; justify-content: flex-end;">
+                <div class="settings-icon" onclick="screen='settings'; render();">⚙️</div>
+            </div>
+        </div>
+
+        <div class="nav" id="app-nav">
+            <button class="nav-btn active" onclick="goTo('home')">Home</button>
+            <button class="nav-btn" onclick="goTo('rankings')">Rankings</button>
+            <button class="nav-btn" onclick="goTo('weekly')">Weekly</button>
+        </div>
+
+        <div class="content" id="content"></div>
+    </div>
+
+    <script>
+        // GLOBAL ERROR HANDLER
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Global error:', msg, 'at line', lineNo);
+            document.getElementById('content').innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <h2 style="color: #FF3B30;">Error Loading App</h2>
+                    <p style="color: #8E8E93; margin: 16px 0;">${msg}</p>
+                    <p style="color: #8E8E93; font-size: 12px;">Line: ${lineNo}</p>
+                    <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Reload App</button>
+                </div>
+            `;
+            return true;
+        };
+        
+        // FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbHiG6wEBvMRwhH_f8cotQc2HQoZ0V8ZU",
+            authDomain: "versus-b202b.firebaseapp.com",
+            databaseURL: "https://versus-b202b-default-rtdb.firebaseio.com",
+            projectId: "versus-b202b",
+            storageBucket: "versus-b202b.firebasestorage.app",
+            messagingSenderId: "878415783187",
+            appId: "1:878415783187:web:b917374dd39132bafda6e6"
+        };
+
+        // Initialize Firebase
+        let db = null;
+        let useFirebase = false;
+        
+        // Try to initialize Firebase
+        try {
+            if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                useFirebase = true;
+                console.log('✅ Firebase initialized successfully');
+            } else {
+                console.log('⚠️ Firebase SDK not loaded - using localStorage only');
+            }
+        } catch (error) {
+            console.error('⚠️ Firebase initialization failed:', error.message);
+            useFirebase = false;
+        }
+
+
+        // STATE
+        // STATE
+        let screen = 'welcome'; // Start with login screen
+        let squadCode = localStorage.getItem('squadCode') || null;
+        let currentUserId = localStorage.getItem('userId') || null;
+        let selectedOpponent = null;
+        let selectedChallenge = null;
+        let selectedMedia = null;
+        let mediaType = null;
+        let selectedCategory = 'all';
+        
+        // Debug logging
+        console.log('🔍 App initialized');
+        console.log('📦 squadCode:', squadCode);
+        console.log('👤 currentUserId:', currentUserId);
+        
+        // DATA
+        // SQUAD DATA - synced via Firebase or localStorage
+        function getSquad() {
+            const stored = localStorage.getItem('squad');
+            if (stored) return JSON.parse(stored);
+            
+            // Default demo squad for testing
+            return {
+                name: 'The Smiths',
+                code: generateSquadCode(),
+                members: {
+                    'dad': { name: 'Dad', avatar: '👨', points: 147, streak: 5, isAdmin: true, isMinor: false },
+                    'mom': { name: 'Mom', avatar: '👩', points: 98, streak: 0, isAdmin: false, isMinor: false },
+                    'son': { name: 'You', avatar: '🧒', points: 138, streak: 0, isAdmin: false, isMinor: true, age: 13, status: 'active' },
+                    'daughter': { name: 'Sister', avatar: '👧', points: 87, streak: 0, isAdmin: false, isMinor: true, age: 10, status: 'active' }
+                }
+            };
+        }
+        
+        function saveSquad(squadData) {
+            // Save to localStorage
+            localStorage.setItem('squad', JSON.stringify(squadData));
+            console.log('💾 Saved to localStorage');
+            
+            // Sync to Firebase if available
+            if (useFirebase && squadData.code) {
+                console.log('🔄 Syncing to Firebase:', squadData.code);
+                console.log('📦 Challenges being synced:', squadData.challenges?.length || 0);
+                if (squadData.challenges) {
+                    squadData.challenges.forEach(c => {
+                        console.log(`  - ${c.id}: ${c.status}`);
+                    });
+                }
+                
+                db.ref('families/' + squadData.code).set(squadData)
+                    .then(() => {
+                        console.log('✅ Synced to Firebase successfully');
+                    })
+                    .catch(err => {
+                        console.error('❌ Firebase sync failed:', err);
+                        console.error('Error details:', err.message);
+                    });
+            } else {
+                console.log('⚠️ Not syncing to Firebase (useFirebase:', useFirebase, ', code:', squadData.code, ')');
+            }
+        }
+        
+        function loadSquadFromFirebase(code) {
+            if (!useFirebase) {
+                alert('Firebase not configured - cannot load squad');
+                return Promise.reject('No Firebase');
+            }
+            
+            return db.ref('families/' + code).once('value')
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        const squadData = snapshot.val();
+                        squad = squadData;
+                        saveSquad(squadData); // Cache locally
+                        return squadData;
+                    } else {
+                        throw new Error('Squad code not found');
+                    }
+                });
+        }
+        
+        function listenToSquadChanges(code) {
+            if (!useFirebase || !code) {
+                console.log('⚠️ Not listening to Firebase changes (useFirebase:', useFirebase, 'code:', code, ')');
+                return;
+            }
+            
+            console.log('👂 Listening to Firebase changes for squad:', code);
+            
+            // Listen for real-time updates
+            db.ref('families/' + code).on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const squadData = snapshot.val();
+                    
+                    console.log('🔄 Firebase update received');
+                    console.log('📦 Challenges in update:', squadData.challenges?.length || 0);
+                    
+                    // Log challenge statuses
+                    if (squadData.challenges) {
+                        squadData.challenges.forEach(c => {
+                            console.log(`  - ${c.id}: ${c.status} (challenger: ${squad.members[c.challenger]?.name}, opponent: ${squad.members[c.opponent]?.name})`);
+                        });
+                    }
+                    
+                    squad = squadData;
+                    localStorage.setItem('squad', JSON.stringify(squadData));
+                    
+                    // Re-render if on home/rankings/weekly screen
+                    if (['home', 'rankings', 'weekly'].includes(screen)) {
+                        console.log('🔄 Re-rendering due to Firebase update (screen:', screen, ')');
+                        render();
+                    } else {
+                        console.log('⏭️ Not re-rendering (screen:', screen, ')');
+                    }
+                }
+            });
+        }
+        
+        function generateSquadCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+        
+        let squad = getSquad();
+
+        // CHALLENGE LIBRARY
+        // CHALLENGE LIBRARY - Core 30 (High Velocity) + Rotating 30 (Novelty)
+        const challenges = [
+            // CORE 30 - INSTANT (10)
+            { name: "What's Directly in Front of You", type: "photo", time: "30s", desc: "Right now. No moving.", core: true },
+            { name: "Closest Red Object", type: "photo", time: "30s", desc: "Find something red. Fast.", core: true },
+            { name: "Show Your Current Shoes", type: "photo", time: "20s", desc: "Whatever you're wearing", core: true },
+            { name: "What's in Your Pocket", type: "photo", time: "45s", desc: "Empty it. Show it.", core: true },
+            { name: "Show Your Desk Right Now", type: "photo", time: "30s", desc: "As is. No cleaning.", core: true },
+            { name: "View Out Nearest Window", type: "photo", time: "20s", desc: "Your current view", core: true },
+            { name: "First Snack You Can Grab", type: "photo", time: "60s", desc: "Kitchen raid", core: true },
+            { name: "Closest Thing to Your Left", type: "photo", time: "20s", desc: "Don't look. Now look.", core: true },
+            { name: "What's Under Your Bed", type: "photo", time: "60s", desc: "Quick reveal", core: true },
+            { name: "Most Random Thing in Arm's Reach", type: "photo", time: "30s", desc: "Reach and grab", core: true },
+            
+            // CORE 30 - SKILL (10)
+            { name: "Bottle Flip", type: "video", time: "2m", desc: "Stick the landing 🔥", core: true, popular: true },
+            { name: "Trash Can Shot", type: "video", time: "2m", desc: "From across the room", core: true, popular: true },
+            { name: "Coin Catch", type: "video", time: "2m", desc: "Flip and catch behind back", core: true },
+            { name: "One-Take Trick Shot", type: "video", time: "3m", desc: "Any object, any target", core: true },
+            { name: "Off-Hand Throw", type: "video", time: "2m", desc: "Wrong hand only", core: true },
+            { name: "10 Jumping Jacks Fastest", type: "video", time: "1m", desc: "Speed run it", core: true },
+            { name: "Fastest Outfit Swap", type: "video", time: "1m", desc: "Complete change in 60s", core: true },
+            { name: "Reaction Time Drop Test", type: "video", time: "2m", desc: "Catch before it hits", core: true },
+            { name: "Quick Freestyle Dance", type: "video", time: "10s", desc: "10 seconds of moves", core: true },
+            { name: "Best Fake Celebration", type: "video", time: "30s", desc: "Act like you won", core: true },
+            
+            // CORE 30 - CREATIVE (5)
+            { name: "Make Something Cool with 3 Objects Near You", type: "photo", time: "2m", desc: "Grab 3 things. Create.", core: true },
+            { name: "60-Second Room Glow Up", type: "video", time: "60s", desc: "Transform your space", core: true },
+            { name: "Create a Fake Album Cover", type: "photo", time: "2m", desc: "You're the artist", core: true },
+            { name: "One-Take Dramatic Monologue", type: "video", time: "30s", desc: "Act it out", core: true },
+            { name: "Build Tallest Thing in 60 Seconds", type: "photo", time: "60s", desc: "Stack without falling", core: true },
+            
+            // CORE 30 - CHAOS (5)
+            { name: "Most Chaotic Selfie", type: "photo", time: "1m", desc: "Mid-action. Weird angle.", core: true },
+            { name: "Weirdest Thing in Your Fridge", type: "photo", time: "90s", desc: "We all have something", core: true },
+            { name: "Worst Dance Move Ever", type: "video", time: "1m", desc: "So bad it's good", core: true },
+            { name: "Best Dramatic Reaction Face", type: "photo", time: "1m", desc: "Act shocked", core: true },
+            { name: "Most Aggressive Snack Stack", type: "photo", time: "2m", desc: "Dangerously tall", core: true },
+            
+            // ROTATING 30 - FLEX (8)
+            { name: "Best Sneaker Collection", type: "photo", time: "3m", desc: "Show the heat 🔥" },
+            { name: "Sickest Gaming Setup", type: "photo", time: "3m", desc: "RGB everything" },
+            { name: "Best Fit Check", type: "photo", time: "2m", desc: "Outfit of the day" },
+            { name: "Cleanest Room Transformation", type: "photo", time: "5m", desc: "Before/after flex" },
+            { name: "Best Poster Wall", type: "photo", time: "2m", desc: "Show your wall art" },
+            { name: "Coolest Trophy/Award", type: "photo", time: "2m", desc: "You earned it" },
+            { name: "Best Vinyl Collection", type: "photo", time: "3m", desc: "Music taste flex" },
+            { name: "Best Tech Battlestation", type: "photo", time: "3m", desc: "Ultimate setup" },
+            
+            // ROTATING 30 - ANTI-FLEX (6)
+            { name: "Worst Old Photo of You", type: "photo", time: "2m", desc: "Dig through the archives" },
+            { name: "Most Chaotic Backpack", type: "photo", time: "2m", desc: "Empty it out" },
+            { name: "Messiest Desk Right Now", type: "photo", time: "1m", desc: "No cleaning allowed" },
+            { name: "Worst Haircut You Ever Had", type: "photo", time: "2m", desc: "Find the photo proof" },
+            { name: "Oldest Thing in Your Backpack", type: "photo", time: "2m", desc: "How old is it?" },
+            { name: "Most Random Thing in Your Room", type: "photo", time: "2m", desc: "Why do you have this?" },
+            
+            // ROTATING 30 - MEME (5)
+            { name: "Recreate a Famous Meme", type: "photo", time: "3m", desc: "Pick your favorite" },
+            { name: "Best Fake Commercial", type: "video", time: "3m", desc: "Sell us something" },
+            { name: "Best Movie Scene Recreation", type: "video", time: "3m", desc: "Act it out" },
+            { name: "Best Impression of Someone", type: "video", time: "2m", desc: "Do their voice" },
+            { name: "Recreate Your Lock Screen", type: "photo", time: "2m", desc: "IRL version" },
+            
+            // ROTATING 30 - SEASONAL (6)
+            { name: "Halloween Costume", type: "photo", time: "5m", desc: "Best costume" },
+            { name: "Dress Like Each Other", type: "photo", time: "5m", desc: "Swap styles" },
+            { name: "Snow Day Chaos", type: "photo", time: "3m", desc: "Winter madness" },
+            { name: "Holiday Theme", type: "photo", time: "3m", desc: "Festive vibes" },
+            { name: "Parent Impersonation", type: "video", time: "2m", desc: "Act like your parent" },
+            { name: "Sibling Roast Battle", type: "video", time: "2m", desc: "Funny roasts only" },
+            
+            // ROTATING 30 - CREATIVE+ (5)
+            { name: "Best Shadow Picture", type: "photo", time: "3m", desc: "Silhouette art" },
+            { name: "Most Creative Angle", type: "photo", time: "3m", desc: "Perspective tricks" },
+            { name: "Best Reflection Shot", type: "photo", time: "3m", desc: "Mirror moment" },
+            { name: "Photo Using Only Phone Light", type: "photo", time: "2m", desc: "Dark room challenge" },
+            { name: "Best Stop Motion", type: "video", time: "5m", desc: "Frame by frame" }
+        ];
+
+        // SOUNDS
+        const sounds = {
+            click: () => playTone(800, 0.05),
+            challenge: () => playTone(600, 0.1),
+            victory: () => {
+                playTone(500, 0.15);
+                setTimeout(() => playTone(650, 0.15), 150);
+                setTimeout(() => playTone(800, 0.2), 300);
+            }
+        };
+
+        function playTone(freq, duration) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        // NAVIGATION
+        function goTo(newScreen) {
+            screen = newScreen;
+            sounds.click();
+            
+            // Update active nav button
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                const btnText = btn.textContent.toLowerCase();
+                if ((newScreen === 'home' && btnText === 'home') ||
+                    (newScreen === 'rankings' && btnText === 'rankings') ||
+                    (newScreen === 'weekly' && btnText === 'weekly')) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            render();
+        }
+
+        // RENDER
+        function render() {
+            try {
+                const content = document.getElementById('content');
+                const header = document.getElementById('app-header');
+                const nav = document.getElementById('app-nav');
+                
+                if (!content) {
+                    console.error('Content element not found');
+                    return;
+                }
+                
+                // Hide header and nav on onboarding screens
+                const onboardingScreens = ['welcome', 'create-squad', 'join-squad', 'invite-members'];
+                if (onboardingScreens.includes(screen)) {
+                    if (header) header.style.display = 'none';
+                    if (nav) nav.style.display = 'none';
+                } else {
+                    if (header) header.style.display = 'flex';
+                    if (nav) nav.style.display = 'flex';
+                }
+                
+                // Render content
+                if (screen === 'welcome') content.innerHTML = renderWelcome();
+                else if (screen === 'create-squad') content.innerHTML = renderCreateSquad();
+                else if (screen === 'join-squad') content.innerHTML = renderJoinSquad();
+                else if (screen === 'setup-identity') content.innerHTML = renderSetupIdentity();
+                else if (screen === 'invite-members') content.innerHTML = renderInviteMembers();
+                else if (screen === 'home') content.innerHTML = renderHome();
+                else if (screen === 'rankings') content.innerHTML = renderRankings();
+                else if (screen === 'weekly') content.innerHTML = renderWeekly();
+                else if (screen === 'settings') content.innerHTML = renderSettings();
+                else if (screen === 'select-opponent') content.innerHTML = renderSelectOpponent();
+                else if (screen === 'challenge-reveal') content.innerHTML = renderChallengeReveal();
+                else if (screen === 'submit-media') content.innerHTML = renderSubmitMedia();
+            } catch (error) {
+                console.error('Render error:', error);
+                document.getElementById('content').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #FF3B30;">
+                        <h2>Error Loading App</h2>
+                        <p>${error.message}</p>
+                        <button class="btn btn-primary" onclick="location.reload()">Reload</button>
+                    </div>
+                `;
+            }
+        }
+
+        // WELCOME & ONBOARDING SCREENS
+        function renderWelcome() {
+            return `
+                <div class="fade-in" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
+                    <div style="margin-bottom: 64px;">
+                        <div class="logo" style="font-size: 56px; margin-bottom: 16px;">VERSUS</div>
+                        <div class="tagline" style="font-size: 12px; margin-bottom: 40px;">WHERE RIVALRIES LIVE</div>
+                        <p style="font-size: 16px; color: #A1A1A6; line-height: 1.6; max-width: 320px; margin: 0 auto;">
+                            Challenge anyone. Win duels. Dominate.
+                        </p>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 320px; width: 100%;">
+                        <button class="btn btn-primary" onclick="screen='create-squad'; render();">
+                            Create Squad
+                        </button>
+                        <button class="btn btn-secondary" onclick="screen='join-squad'; render();">
+                            Join Squad
+                        </button>
+                        <p style="font-size: 11px; color: #6E6E73; margin-top: 4px;">Works for squads, friends, roommates, teams</p>
+                    </div>
+
+                    <div style="margin-top: 40px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                        <button style="background: none; border: none; color: #8E8E93; font-size: 13px; cursor: pointer; text-decoration: underline;" onclick="loadDemoSquad();">
+                            Try Demo Mode
+                        </button>
+                        ${squadCode ? `
+                            <button style="background: none; border: none; color: #FF9500; font-size: 12px; cursor: pointer; text-decoration: underline;" onclick="resetApp();">
+                                🔄 Reset App (Clear Data)
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function resetApp() {
+            if (confirm('This will clear all data and start fresh. Continue?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function renderCreateSquad() {
+            return `
+                <div class="fade-in" style="padding: 40px 20px;">
+                    <button class="back-btn" onclick="screen='welcome'; render();">← Back</button>
+
+                    <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 8px;">Create Your Squad</h2>
+                    <p style="font-size: 14px; color: #A1A1A6; margin-bottom: 32px;">Set up your squad competition arena</p>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Squad Name</label>
+                        <input type="text" id="squadName" placeholder="The Legends" style="width: 100%; padding: 14px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; color: #FFFFFF; font-size: 15px; font-weight: 600;" />
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Your Name</label>
+                        <input type="text" id="parentName" placeholder="Dad" style="width: 100%; padding: 14px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; color: #FFFFFF; font-size: 15px; font-weight: 600;" />
+                    </div>
+
+                    <div style="margin-bottom: 32px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Create Your Avatar</label>
+                        
+                        <!-- Randomize Button (Top) -->
+                        <button onclick="randomizeAvatar()" style="width: 100%; padding: 12px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; color: #FFD700; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-bottom: 24px;">
+                            🎲 Randomize
+                        </button>
+                        
+                        <!-- Avatar Preview -->
+                        <div id="avatarPreview" style="width: 120px; height: 120px; margin: 0 auto 24px; border-radius: 60px; background: #1C1C1E; display: flex; align-items: center; justify-content: center; border: 3px solid #FFD700;">
+                            <div id="avatarDisplay" style="font-size: 72px;">👤</div>
+                        </div>
+                        
+                        <!-- Step 1: Skin Tone -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px;">SKIN TONE</div>
+                            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                                ${['🏻', '🏼', '🏽', '🏾', '🏿', ''].map((tone, i) => {
+                                    const colors = ['#FFE5D9', '#F4D3C4', '#D9A679', '#A67C52', '#6B4423', '#FFD700'];
+                                    const labels = ['Light', 'Fair', 'Medium', 'Tan', 'Dark', 'Gold'];
+                                    return `
+                                        <div onclick="selectSkinTone('${tone}', ${i})" class="tone-option" data-tone="${i}" style="height: 48px; background: ${colors[i]}; border: 2px solid #2C2C2E; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                                            <div style="font-size: 9px; color: ${i === 5 ? '#000' : '#666'}; font-weight: 700;">${labels[i]}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Style -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px;">STYLE</div>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                                ${[
+                                    {emoji: '👨', label: 'Man'},
+                                    {emoji: '👩', label: 'Woman'},
+                                    {emoji: '🧔', label: 'Beard'},
+                                    {emoji: '👴', label: 'Older'},
+                                    {emoji: '👦', label: 'Boy'},
+                                    {emoji: '👧', label: 'Girl'},
+                                    {emoji: '👨‍🦲', label: 'Bald'},
+                                    {emoji: '👨‍🦱', label: 'Curly'},
+                                    {emoji: '👨‍🦰', label: 'Red'},
+                                    {emoji: '👩‍🦰', label: 'RedF'},
+                                    {emoji: '👩‍🦱', label: 'CurlyF'},
+                                    {emoji: '🧕', label: 'Hijab'}
+                                ].map((style, i) => `
+                                    <div onclick="selectStyle('${style.emoji}', ${i})" class="style-option" data-style="${i}" style="padding: 12px 8px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                                        <div style="font-size: 32px; margin-bottom: 4px;">${style.emoji}</div>
+                                        <div style="font-size: 8px; color: #8E8E93; font-weight: 600;">${style.label}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="parentAvatar" value="👤" />
+                    </div>
+
+                    <button class="btn btn-primary" onclick="createSquad();">
+                        Create Squad & Get Code
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderJoinSquad() {
+            return `
+                <div class="fade-in" style="padding: 40px 20px;">
+                    <button class="back-btn" onclick="screen='welcome'; render();">← Back</button>
+
+                    <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 8px;">Join a Squad</h2>
+                    <p style="font-size: 14px; color: #A1A1A6; margin-bottom: 32px;">Enter the squad code to join</p>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Squad Code</label>
+                        <input type="text" id="joinCode" placeholder="ABC123" maxlength="6" style="width: 100%; padding: 14px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; color: #FFFFFF; font-size: 20px; font-weight: 900; text-align: center; letter-spacing: 4px; text-transform: uppercase;" />
+                    </div>
+
+                    <button class="btn btn-primary" onclick="verifyCode();">
+                        Continue
+                    </button>
+
+                    <div style="margin-top: 24px; padding: 16px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px;">
+                        <p style="font-size: 13px; color: #FFD700; line-height: 1.5;">
+                            💡 Ask your parent or squad admin for the 6-character squad code
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSetupIdentity() {
+            return `
+                <div class="fade-in" style="padding: 40px 20px;">
+                    <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 8px;">Create Your Profile</h2>
+                    <p style="font-size: 14px; color: #A1A1A6; margin-bottom: 32px;">Join ${squad.name}</p>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Your Name</label>
+                        <input type="text" id="memberName" placeholder="Enter your name" style="width: 100%; padding: 14px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; color: #FFFFFF; font-size: 15px; font-weight: 600;" />
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Your Age</label>
+                        <input type="number" id="memberAge" placeholder="Enter your age" min="1" max="120" style="width: 100%; padding: 14px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; color: #FFFFFF; font-size: 15px; font-weight: 600;" />
+                        <p style="font-size: 11px; color: #8E8E93; margin-top: 8px;">🔒 Under 18? Parental controls will be enabled</p>
+                    </div>
+
+                    <div style="margin-bottom: 32px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Create Your Avatar</label>
+                        
+                        <!-- Randomize Button (Top) -->
+                        <button onclick="randomizeAvatar()" style="width: 100%; padding: 12px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; color: #FFD700; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-bottom: 24px;">
+                            🎲 Randomize
+                        </button>
+                        
+                        <!-- Avatar Preview -->
+                        <div id="avatarPreview" style="width: 120px; height: 120px; margin: 0 auto 24px; border-radius: 60px; background: #1C1C1E; display: flex; align-items: center; justify-content: center; border: 3px solid #FFD700;">
+                            <div id="avatarDisplay" style="font-size: 72px;">👤</div>
+                        </div>
+                        
+                        <!-- Step 1: Skin Tone -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px;">SKIN TONE</div>
+                            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                                ${['🏻', '🏼', '🏽', '🏾', '🏿', ''].map((tone, i) => {
+                                    const colors = ['#FFE5D9', '#F4D3C4', '#D9A679', '#A67C52', '#6B4423', '#FFD700'];
+                                    const labels = ['Light', 'Fair', 'Medium', 'Tan', 'Dark', 'Gold'];
+                                    return `
+                                        <div onclick="selectSkinTone('${tone}', ${i})" class="tone-option" data-tone="${i}" style="height: 48px; background: ${colors[i]}; border: 2px solid #2C2C2E; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                                            <div style="font-size: 9px; color: ${i === 5 ? '#000' : '#666'}; font-weight: 700;">${labels[i]}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Style -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px;">STYLE</div>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                                ${[
+                                    {emoji: '👨', label: 'Man'},
+                                    {emoji: '👩', label: 'Woman'},
+                                    {emoji: '🧔', label: 'Beard'},
+                                    {emoji: '👴', label: 'Older'},
+                                    {emoji: '👦', label: 'Boy'},
+                                    {emoji: '👧', label: 'Girl'},
+                                    {emoji: '👨‍🦲', label: 'Bald'},
+                                    {emoji: '👨‍🦱', label: 'Curly'},
+                                    {emoji: '👨‍🦰', label: 'Red'},
+                                    {emoji: '👩‍🦰', label: 'RedF'},
+                                    {emoji: '👩‍🦱', label: 'CurlyF'},
+                                    {emoji: '🧕', label: 'Hijab'}
+                                ].map((style, i) => `
+                                    <div onclick="selectStyle('${style.emoji}', ${i})" class="style-option" data-style="${i}" style="padding: 12px 8px; background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                                        <div style="font-size: 32px; margin-bottom: 4px;">${style.emoji}</div>
+                                        <div style="font-size: 8px; color: #8E8E93; font-weight: 600;">${style.label}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="memberAvatar" value="👤" />
+                    </div>
+
+                    <button class="btn btn-primary" onclick="completeIdentitySetup();">
+                        Join Squad
+                    </button>
+                </div>
+            `;
+        }
+
+        function completeIdentitySetup() {
+            const memberName = document.getElementById('memberName').value.trim();
+            const memberAge = parseInt(document.getElementById('memberAge').value);
+            const memberAvatar = document.getElementById('memberAvatar').value;
+
+            if (!memberName) {
+                alert('Please enter your name');
+                return;
+            }
+
+            if (!memberAge || memberAge < 1) {
+                alert('Please enter your age');
+                return;
+            }
+
+            // Create new user ID with extra randomness to ensure uniqueness
+            const newUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // CRITICAL: Set BOTH the global variable AND localStorage IMMEDIATELY
+            currentUserId = newUserId;
+            localStorage.setItem('userId', newUserId);
+            
+            console.log('✅ New user created:', newUserId, 'Name:', memberName);
+
+            // Add new member to squad
+            squad.members[newUserId] = {
+                name: memberName,
+                avatar: memberAvatar,
+                points: 0,
+                streak: 0,
+                isAdmin: false,
+                isMinor: memberAge < 18,
+                age: memberAge,
+                status: 'active'
+            };
+
+            // Save to storage (this will sync to Firebase if enabled)
+            saveSquad(squad);
+            
+            console.log('✅ Squad saved. Current userId:', currentUserId);
+            console.log('✅ Squad members:', Object.keys(squad.members));
+
+            // Go to home
+            screen = 'home';
+            render();
+        }
+
+        function renderInviteMembers() {
+            const memberCount = Object.keys(squad.members).length;
+            
+            return `
+                <div class="fade-in" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
+                    <div style="margin-bottom: 48px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">Invite Your Squad</h2>
+                        <p style="font-size: 15px; color: #A1A1A6; margin-bottom: 32px;">Share this code to add members</p>
+                        
+                        <div style="padding: 24px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.05)); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 16px; margin-bottom: 24px;">
+                            <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #FFD700; margin-bottom: 12px; text-transform: uppercase;">Squad Code</div>
+                            <div style="font-size: 40px; font-weight: 900; letter-spacing: 8px; color: #FFD700; margin-bottom: 16px;">${squad.code}</div>
+                            <div style="display: flex; gap: 8px; justify-content: center;">
+                                <button class="btn btn-secondary" style="padding: 10px 20px; font-size: 13px;" onclick="copyCode('${squad.code}')">
+                                    📋 Copy
+                                </button>
+                                <button class="btn btn-secondary" style="padding: 10px 20px; font-size: 13px;" onclick="shareCode('${squad.code}')">
+                                    📤 Share
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="padding: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 24px;">
+                            <div style="font-size: 13px; color: #8E8E93; margin-bottom: 8px;">Current Members</div>
+                            <div style="font-size: 24px; font-weight: 900; color: #FFFFFF;">${memberCount}</div>
+                        </div>
+
+                        <div style="max-width: 320px; margin: 0 auto; text-align: left;">
+                            <div style="font-size: 13px; font-weight: 600; color: #A1A1A6; margin-bottom: 12px;">How to invite:</div>
+                            <div style="font-size: 13px; color: #8E8E93; line-height: 1.6;">
+                                1. Copy or share the code above<br>
+                                2. Send to squad members<br>
+                                3. They open the app and click "Join Squad"<br>
+                                4. They enter the code<br>
+                                5. Start competing!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px; max-width: 320px; width: 100%;">
+                        <button class="btn btn-primary" onclick="screen='home'; render();">
+                            ${memberCount > 1 ? 'Start Competing' : 'Continue (Invite Later)'}
+                        </button>
+                        ${memberCount === 1 ? `
+                            <p style="font-size: 12px; color: #8E8E93; margin-top: 8px;">
+                                💡 You can invite members later from Settings
+                            </p>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ONBOARDING FUNCTIONS
+        // AVATAR BUILDER SYSTEM
+        let avatarState = {
+            skinTone: '',
+            style: '👨'
+        };
+        
+        function selectSkinTone(tone, index) {
+            avatarState.skinTone = tone;
+            document.querySelectorAll('.tone-option').forEach(el => {
+                el.style.borderColor = '#2C2C2E';
+            });
+            event.target.closest('.tone-option').style.borderColor = '#FFD700';
+            updateAvatarDisplay();
+        }
+        
+        function selectStyle(emoji, index) {
+            avatarState.style = emoji;
+            document.querySelectorAll('.style-option').forEach(el => {
+                el.style.borderColor = '#2C2C2E';
+            });
+            event.target.closest('.style-option').style.borderColor = '#FFD700';
+            updateAvatarDisplay();
+        }
+        
+        function updateAvatarDisplay() {
+            const display = document.getElementById('avatarDisplay');
+            const avatar = avatarState.style + avatarState.skinTone;
+            display.textContent = avatar;
+            
+            // Update both possible avatar input fields
+            const parentAvatarInput = document.getElementById('parentAvatar');
+            const memberAvatarInput = document.getElementById('memberAvatar');
+            
+            if (parentAvatarInput) parentAvatarInput.value = avatar;
+            if (memberAvatarInput) memberAvatarInput.value = avatar;
+        }
+        
+        function randomizeAvatar() {
+            sounds.click();
+            
+            const tones = ['🏻', '🏼', '🏽', '🏾', '🏿', ''];
+            const styles = ['👨', '👩', '🧔', '👴', '👦', '👧', '👨‍🦲', '👨‍🦱', '👨‍🦰', '👩‍🦰', '👩‍🦱', '🧕'];
+            
+            const randomTone = Math.floor(Math.random() * tones.length);
+            const randomStyle = Math.floor(Math.random() * styles.length);
+            
+            avatarState.skinTone = tones[randomTone];
+            avatarState.style = styles[randomStyle];
+            
+            document.querySelectorAll('.tone-option').forEach((el, i) => {
+                el.style.borderColor = i === randomTone ? '#FFD700' : '#2C2C2E';
+            });
+            
+            document.querySelectorAll('.style-option').forEach((el, i) => {
+                el.style.borderColor = i === randomStyle ? '#FFD700' : '#2C2C2E';
+            });
+            
+            updateAvatarDisplay();
+        }
+        
+        function selectAvatar(emoji) {
+            document.getElementById('parentAvatar').value = emoji;
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.style.borderColor = '#2C2C2E';
+                el.style.background = '#1C1C1E';
+            });
+            event.target.style.borderColor = '#FFD700';
+            event.target.style.background = 'rgba(255, 215, 0, 0.1)';
+        }
+
+        function createSquad() {
+            const squadName = document.getElementById('squadName').value.trim();
+            const parentName = document.getElementById('parentName').value.trim();
+            const parentAvatar = document.getElementById('parentAvatar').value;
+
+            if (!squadName || !parentName) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const code = generateSquadCode();
+            const parentId = 'user_' + Date.now();
+
+            squad = {
+                name: squadName,
+                code: code,
+                members: {
+                    [parentId]: {
+                        name: parentName,
+                        avatar: parentAvatar,
+                        points: 0,
+                        streak: 0,
+                        isAdmin: true,
+                        isMinor: false
+                    }
+                }
+            };
+
+            saveSquad(squad);
+            localStorage.setItem('squadCode', code);
+            localStorage.setItem('userId', parentId);
+            squadCode = code;
+            currentUserId = parentId;
+
+            // Start listening for Firebase changes if enabled
+            if (useFirebase) {
+                listenToSquadChanges(code);
+            }
+
+            // Build status message outside template literal
+            let statusMessage = '';
+            if (useFirebase) {
+                statusMessage = '<p style="font-size: 12px; color: #34C759; margin-bottom: 16px;">✅ Real-time sync enabled</p>';
+            } else {
+                statusMessage = '<p style="font-size: 12px; color: #FF9500; margin-bottom: 16px;">⚠️ localStorage only (no cross-device sync)</p>';
+            }
+
+            // Show squad code
+            showModal(
+                '🎉 Squad Created!',
+                `
+                <div style="text-align: center;">
+                    <p style="margin-bottom: 16px;">Your squad code is:</p>
+                    <div style="font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #FFD700; margin-bottom: 16px;">${code}</div>
+                    <p style="font-size: 13px; color: #8E8E93; margin-bottom: 16px;">Share this code with squad members so they can join!</p>
+                    ${statusMessage}
+                    <button class="btn btn-secondary" onclick="copyCode('${code}')" style="margin-bottom: 12px;">
+                        📋 Copy Code
+                    </button>
+                    <button class="btn btn-secondary" onclick="shareCode('${code}')">
+                        📤 Share Invite
+                    </button>
+                </div>
+                `,
+                null,  // No cancel button
+                'Go to Home',  // Confirm button
+                () => {  // Confirm action
+                    closeModal();
+                    screen = 'home';
+                    render();
+                },
+                null  // No cancel action
+            );
+        }
+
+        function verifyCode() {
+            const code = document.getElementById('joinCode').value.trim().toUpperCase();
+            
+            if (!code || code.length !== 6) {
+                alert('Please enter a valid 6-character code');
+                return;
+            }
+
+            // Clear any existing userId - this person needs to create their own identity
+            currentUserId = null;
+            localStorage.removeItem('userId');
+
+            if (useFirebase) {
+                // Load from Firebase
+                loadSquadFromFirebase(code)
+                    .then(squadData => {
+                        squad = squadData;
+                        squadCode = code;
+                        localStorage.setItem('squadCode', code);
+                        
+                        // Start listening for changes
+                        listenToSquadChanges(code);
+                        
+                        // Go to identity setup screen (not home)
+                        screen = 'setup-identity';
+                        render();
+                    })
+                    .catch(err => {
+                        console.error('Firebase error:', err);
+                        alert('❌ Squad code not found. Make sure you entered it correctly.');
+                    });
+            } else {
+                // localStorage fallback - only works on same device
+                const stored = localStorage.getItem('squad');
+                if (stored) {
+                    const squadData = JSON.parse(stored);
+                    if (squadData.code === code) {
+                        squad = squadData;
+                        squadCode = code;
+                        localStorage.setItem('squadCode', code);
+                        
+                        // Go to identity setup screen
+                        screen = 'setup-identity';
+                        render();
+                    } else {
+                        alert('❌ Squad code not found.');
+                    }
+                } else {
+                    alert('❌ No squad found with that code.');
+                }
+            }
+        }
+
+        function loadDemoSquad() {
+            // Load demo squad with sample data
+            squad = getSquad();
+            squadCode = squad.code;
+            currentUserId = 'son';
+            localStorage.setItem('squadCode', squadCode);
+            localStorage.setItem('userId', currentUserId);
+            saveSquad(squad);
+            screen = 'home';
+            render();
+        }
+
+        function copyCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                alert('✅ Code copied to clipboard!');
+            });
+        }
+
+        function shareCode(code) {
+            // Show modal with invite options
+            showInviteOptions(code);
+        }
+
+        function showInviteOptions(code) {
+            const modal = document.createElement('div');
+            modal.id = 'inviteModal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 10, 12, 0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
+            
+            const inviteText = `Join my squad on VERSUS! 
+
+Squad Code: ${code}
+
+How to join:
+1. Open VERSUS app
+2. Click "Join Squad"  
+3. Enter code: ${code}
+
+Let's compete! 🏆`;
+
+            modal.innerHTML = `
+                <div style="background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 16px; padding: 24px; max-width: 400px; width: 100%;">
+                    <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">📤 Invite via...</div>
+                    <div style="font-size: 13px; color: #8E8E93; margin-bottom: 24px;">Choose how to send the invite</div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                        <button onclick="inviteViaSMS('${code}')" style="padding: 16px; border: 2px solid #34C759; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; background: rgba(52, 199, 89, 0.1); color: #34C759; display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 24px;">💬</span>
+                            <span style="flex: 1; text-align: left;">Send via SMS</span>
+                            <span style="font-size: 18px;">→</span>
+                        </button>
+                        
+                        <button onclick="inviteViaEmail('${code}')" style="padding: 16px; border: 2px solid #0A84FF; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; background: rgba(10, 132, 255, 0.1); color: #0A84FF; display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 24px;">📧</span>
+                            <span style="flex: 1; text-align: left;">Send via Email</span>
+                            <span style="font-size: 18px;">→</span>
+                        </button>
+                        
+                        <button onclick="copyInviteText('${code}')" style="padding: 16px; border: 2px solid #FFD700; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; background: rgba(255, 215, 0, 0.1); color: #FFD700; display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 24px;">📋</span>
+                            <span style="flex: 1; text-align: left;">Copy Invite Message</span>
+                            <span style="font-size: 18px;">→</span>
+                        </button>
+                    </div>
+                    
+                    <button onclick="closeInviteModal()" style="width: 100%; padding: 14px; border: 1px solid #3C3C3E; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; background: #2C2C2E; color: #F5F5F7;">
+                        Cancel
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function closeInviteModal() {
+            const modal = document.getElementById('inviteModal');
+            if (modal) modal.remove();
+        }
+
+        function inviteViaSMS(code) {
+            closeInviteModal();
+            const text = `Join my squad on VERSUS!\n\nSquad Code: ${code}\n\nHow to join:\n1. Open VERSUS app\n2. Click "Join Squad"\n3. Enter code: ${code}\n\nLet's compete! 🏆`;
+            
+            // Try native share first (works on most mobile devices)
+            if (navigator.share) {
+                navigator.share({
+                    text: text
+                }).catch(() => {
+                    // Fallback to SMS
+                    window.location.href = `sms:?&body=${encodeURIComponent(text)}`;
+                });
+            } else {
+                // Direct SMS link
+                window.location.href = `sms:?&body=${encodeURIComponent(text)}`;
+            }
+        }
+
+        function inviteViaEmail(code) {
+            closeInviteModal();
+            const subject = '🏆 Join my VERSUS squad!';
+            const body = `Hi!
+
+I created a squad on VERSUS and I'd love for you to join!
+
+Squad Code: ${code}
+
+How to join:
+1. Open the VERSUS app
+2. Click "Join Squad"  
+3. Enter the code: ${code}
+
+VERSUS is a squad competition app where we challenge each other and compete for points. It's fun!
+
+Let me know when you're in!`;
+
+            // Create mailto link
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function copyInviteText(code) {
+            closeInviteModal();
+            const text = `Join my squad on VERSUS!\n\nSquad Code: ${code}\n\nHow to join:\n1. Open VERSUS app\n2. Click "Join Squad"\n3. Enter code: ${code}\n\nLet's compete! 🏆`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Invite message copied! Share it anywhere.');
+            });
+        }
+
+        function renderHome() {
+            console.log('🏠 Rendering home screen for:', squad.members[currentUserId]?.name);
+            console.log('📊 Total challenges in squad:', squad.challenges?.length || 0);
+            
+            const rankings = Object.entries(squad.members).sort((a, b) => b[1].points - a[1].points);
+            const champion = rankings[0][1];
+            const championId = rankings[0][0];
+            const you = squad.members[currentUserId];
+            const yourRank = rankings.findIndex(([id]) => id === currentUserId) + 1;
+            const pointsFromFirst = you ? champion.points - you.points : champion.points;
+            
+            // Dynamic header based on state
+            let headerText = '';
+            let headerEmoji = '';
+            let showConsequence = false;
+            
+            if (yourRank === 1) {
+                headerEmoji = '👑';
+                headerText = 'YOU TOOK THE CROWN';
+            } else if (pointsFromFirst <= 5) {
+                headerEmoji = '⚡';
+                headerText = 'ONE WIN TO DETHRONE HIM';
+                showConsequence = true;
+            } else if (pointsFromFirst < 15) {
+                headerEmoji = '⚔️';
+                headerText = 'CROWN AT RISK';
+                showConsequence = pointsFromFirst <= 10;
+            } else if (champion.streak >= 3) {
+                headerEmoji = '🔥';
+                headerText = `${champion.name.toUpperCase()} IS UNSTOPPABLE`;
+            } else {
+                headerEmoji = '👑';
+                headerText = `${champion.name.toUpperCase()} IS REIGNING`;
+            }
+            
+            // Compressed context line
+            let contextLine = '';
+            if (yourRank !== 1) {
+                const streakText = champion.streak > 0 ? `${champion.streak} Win Streak` : '';
+                const pointsText = `${champion.points} pts`;
+                contextLine = streakText ? `${champion.name} — ${streakText}, ${pointsText}` : `${champion.name} — ${pointsText}`;
+            }
+            
+            return `
+                <div class="fade-in">
+                    <div style="text-align: center; padding: 40px 0 20px;">
+                        <h1 style="font-size: 26px; font-weight: 900; margin-bottom: 8px; line-height: 1.2; letter-spacing: 0.5px;">
+                            ${headerEmoji} ${headerText}
+                        </h1>
+                        ${contextLine ? `<p style="font-size: 13px; color: #A1A1A6; font-weight: 600; margin-bottom: 16px;">${contextLine}</p>` : ''}
+                        ${yourRank === 1 ? `<p style="font-size: 14px; color: #FFD700; font-weight: 700; margin-bottom: 16px;">Defend your title!</p>` : ''}
+                        
+                        ${you && yourRank > 1 ? `
+                            <div style="margin: 0 auto; max-width: 280px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-size: 13px; color: #FFFFFF; font-weight: 700;">You — ${you.points}</span>
+                                    <span style="font-size: 13px; color: #FFFFFF; font-weight: 700;">${champion.name} — ${champion.points}</span>
+                                </div>
+                                <div style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15);">
+                                    <div style="height: 100%; background: linear-gradient(90deg, #FFD700, #FFA500); width: ${Math.max(5, ((you.points / champion.points) * 100))}%; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${showConsequence ? `
+                            <div style="margin-top: 16px; padding: 10px 16px; background: rgba(255, 215, 0, 0.12); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; display: inline-block;">
+                                <div style="font-size: 13px; color: #FFD700; font-weight: 700;">🔥 Win this challenge to take the crown</div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    ${(() => {
+                        const completedChallenges = getCompletedChallenges();
+                        if (completedChallenges.length === 0) return '';
+                        return `
+                            <div style="margin-bottom: 24px;">
+                                <div style="background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(255, 165, 0, 0.05)); border: 2px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 20px;">
+                                    <div style="font-size: 18px; font-weight: 900; margin-bottom: 12px; color: #FFD700;">🏆 CHALLENGE RESULTS!</div>
+                                    ${completedChallenges.map(c => {
+                                        const opponentId = c.challenger === currentUserId ? c.opponent : c.challenger;
+                                        const opponentName = squad.members[opponentId].name;
+                                        return `
+                                            <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                                <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">Battle vs ${opponentName}</div>
+                                                <div style="font-size: 13px; color: #A1A1A6; margin-bottom: 12px;">${c.challengeType}</div>
+                                                <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="viewChallengeResults('${c.id}')">
+                                                    👁️ View Results
+                                                </button>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    })()}
+
+                    ${(() => {
+                        const pendingChallenges = getPendingChallenges();
+                        if (pendingChallenges.length === 0) return '';
+                        return `
+                            <div style="margin-bottom: 24px;">
+                                <div style="background: linear-gradient(135deg, rgba(255, 59, 48, 0.15), rgba(255, 149, 0, 0.05)); border: 2px solid rgba(255, 59, 48, 0.3); border-radius: 12px; padding: 20px;">
+                                    <div style="font-size: 18px; font-weight: 900; margin-bottom: 12px; color: #FF3B30;">⚡ YOU'VE BEEN CHALLENGED!</div>
+                                    ${pendingChallenges.map(c => `
+                                        <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                            <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">${squad.members[c.challenger].name} challenged you!</div>
+                                            <div style="font-size: 13px; color: #A1A1A6; margin-bottom: 12px;">${c.challengeType}</div>
+                                            <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="respondToChallenge('${c.id}')">
+                                                🎯 Respond Now
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    })()}
+
+                    <div style="margin-bottom: 32px;">
+                        <button class="btn btn-primary" onclick="screen='select-opponent'; selectedOpponent='${championId}'; render();">
+                            ${yourRank === 1 ? 'Defend Your Crown' : 'Take Their Crown'}
+                        </button>
+                        <div style="text-align: center; margin-top: 12px;">
+                            <button style="background: none; border: none; color: #A1A1A6; font-size: 13px; cursor: pointer; font-weight: 600; transition: color 0.2s;" 
+                                    onmouseover="this.style.color='#FFD700'" 
+                                    onmouseout="this.style.color='#A1A1A6'"
+                                    onclick="screen='select-opponent'; render();">
+                                Or hunt someone else ↓
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section-title">🏆 Current Standings</div>
+                        ${rankings.slice(0, 3).map(([id, m], i) => `
+                            <div class="ladder-row ${i === 0 ? 'rank-1' : ''}">
+                                <div class="rank rank-${i + 1}">${i + 1}</div>
+                                <div class="avatar">${m.avatar}</div>
+                                <div class="member-info">
+                                    <div class="member-name">
+                                        ${m.name}
+                                        ${m.streak > 0 ? `<span class="streak">🔥 ${m.streak}</span>` : ''}
+                                    </div>
+                                    <div class="member-status">${i === 0 ? 'Champion' : i === 1 ? 'Runner-up' : 'Third'}${id === currentUserId ? ' (You)' : ''}</div>
+                                </div>
+                                <div class="points">${m.points}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRankings() {
+            const rankings = Object.entries(squad.members).sort((a, b) => b[1].points - a[1].points);
+            
+            return `
+                <div class="fade-in">
+                    <div class="section-title">🏆 Full Rankings</div>
+                    
+                    ${rankings.map(([id, m], i) => `
+                        <div class="ladder-row ${i === 0 ? 'rank-1' : ''}">
+                            <div class="rank rank-${i + 1}">${i + 1}</div>
+                            <div class="avatar">${m.avatar}</div>
+                            <div class="member-info">
+                                <div class="member-name">
+                                    ${m.name}
+                                    ${m.streak > 0 ? `<span class="streak">🔥 ${m.streak}</span>` : ''}
+                                </div>
+                                <div class="member-status">
+                                    ${i === 0 ? '👑 Champion' : i === 1 ? '🥈 Runner-up' : i === 2 ? '🥉 Third Place' : 'Competitor'}
+                                    ${m.isMinor ? ' • Minor' : ''}
+                                    ${m.status === 'paused' ? ' • ⏸️ Paused' : ''}
+                                </div>
+                            </div>
+                            <div class="points">${m.points}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderWeekly() {
+            return `
+                <div class="fade-in">
+                    <div class="section-title">📅 Weekly Challenge</div>
+                    
+                    <div style="background: #1C1C1E; border: 2px solid #FFD700; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                        <div style="display: inline-block; background: rgba(255, 215, 0, 0.15); color: #FFD700; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 16px;">⚡ THIS WEEK</div>
+                        <div style="font-size: 24px; font-weight: 900; margin-bottom: 8px;">Best Home Office Setup</div>
+                        <div style="font-size: 14px; color: #8E8E93;">Show off your workspace</div>
+                    </div>
+
+                    <div style="background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #FFD700;">Worth up to 35 points!</div>
+                        <div style="font-size: 13px; color: #8E8E93; line-height: 1.5;">
+                            • Your score × 2 (max 20 pts)<br>
+                            • Full participation: +5 pts<br>
+                            • Weekly MVP: +10 pts
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="font-size: 13px; color: #8E8E93; margin-bottom: 12px;">Time Remaining</div>
+                        <div style="font-size: 32px; font-weight: 900; color: #FFD700;">3d 14h 22m</div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="alert('Would open photo submission for weekly challenge')">
+                        Submit Entry
+                    </button>
+
+                    <div style="font-size: 13px; color: #8E8E93; text-align: center; margin-top: 16px;">
+                        2 of 4 squad members have submitted
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSelectOpponent() {
+            return `
+                <button class="back-btn" onclick="screen='home'; render();">← Back</button>
+                
+                <div class="fade-in">
+                    <div class="section-title">⚔️ Select Opponent</div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+                        ${Object.entries(squad.members).filter(([id]) => id !== currentUserId).map(([id, m]) => `
+                            <div onclick="selectOpponent('${id}')" style="background: ${selectedOpponent === id ? 'rgba(212, 175, 55, 0.1)' : '#1C1C1E'}; border: 2px solid ${selectedOpponent === id ? '#D4AF37' : '#2C2C2E'}; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer;">
+                                <div style="font-size: 48px; margin-bottom: 12px;">${m.avatar}</div>
+                                <div style="font-size: 15px; font-weight: 600;">${m.name}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button class="btn btn-primary ${!selectedOpponent ? 'hidden' : ''}" onclick="getRandomChallenge()">Start Challenge</button>
+                </div>
+            `;
+        }
+
+        function selectOpponent(id) {
+            selectedOpponent = id;
+            sounds.click();
+            render();
+        }
+
+        function getRandomChallenge() {
+            sounds.click();
+            // Get a random challenge
+            selectedChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+            screen = 'challenge-reveal';
+            render();
+        }
+
+        function skipChallenge() {
+            sounds.click();
+            // Get a different random challenge
+            selectedChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+            render();
+        }
+
+        function renderChallengeReveal() {
+            if (!selectedChallenge) return '';
+            
+            const isVideo = selectedChallenge.type === 'video';
+            const opponent = squad.members[selectedOpponent];
+            
+            return `
+                <div class="fade-in" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px;">🎲</div>
+                    
+                    <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 8px; color: #FFD700;">YOUR CHALLENGE</h2>
+                    <p style="font-size: 14px; color: #8E8E93; margin-bottom: 32px;">Challenging ${opponent.name}</p>
+                    
+                    <div style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.05)); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 20px; padding: 32px 24px; margin-bottom: 32px; max-width: 400px;">
+                        <div style="font-size: 22px; font-weight: 900; line-height: 1.4; color: #FFFFFF; margin-bottom: 16px;">
+                            ${selectedChallenge.name}
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+                            <div style="background: ${isVideo ? 'rgba(10, 132, 255, 0.2)' : 'rgba(52, 199, 89, 0.2)'}; color: ${isVideo ? '#0A84FF' : '#34C759'}; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+                                ${isVideo ? '📹 VIDEO' : '📸 PHOTO'}
+                            </div>
+                            ${selectedChallenge.time ? `
+                                <div style="background: rgba(255, 255, 255, 0.1); color: #A1A1A6; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+                                    ⏱️ ${selectedChallenge.time}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; margin-bottom: 32px; max-width: 360px;">
+                        <p style="font-size: 13px; color: #8E8E93; line-height: 1.6;">
+                            ${opponent.name} must judge within 24 hours
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;">
+                        <button class="btn btn-primary" onclick="screen='submit-media'; render();">
+                            Accept Challenge
+                        </button>
+                        <button class="btn btn-secondary" onclick="skipChallenge();">
+                            Skip & Get New Challenge
+                        </button>
+                        <button style="background: none; border: none; color: #8E8E93; font-size: 13px; cursor: pointer; margin-top: 8px;" onclick="screen='select-opponent'; selectedChallenge=null; render();">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectChallengeAndStart(index) {
+            // This function is no longer needed but keeping for compatibility
+            sounds.click();
+            selectedChallenge = challenges[index];
+            screen = 'submit-media';
+            render();
+        }
+
+        function renderSubmitMedia() {
+            if (!selectedChallenge) return '';
+            
+            const isVideo = selectedChallenge.type === 'video';
+            
+            return `
+                <button class="back-btn" onclick="screen='challenge-reveal'; selectedMedia=null; render();">← Back</button>
+                
+                <div class="fade-in">
+                    <div style="background: #1C1C1E; border: 2px solid #D4AF37; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                        <div style="display: inline-block; background: rgba(212, 175, 55, 0.15); color: #D4AF37; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-bottom: 12px;">
+                            ⚔️ CHALLENGE vs ${squad.members[selectedOpponent].name}
+                        </div>
+                        <div style="font-size: 24px; font-weight: 900; margin-bottom: 8px;">${selectedChallenge.name}</div>
+                        <div style="font-size: 14px; color: #8E8E93;">${selectedChallenge.desc}</div>
+                    </div>
+
+                    ${!selectedMedia ? `
+                        <div class="upload-zone" onclick="document.getElementById('mediaInput').click();">
+                            <div class="upload-icon">${isVideo ? '📹' : '📸'}</div>
+                            <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">
+                                ${isVideo ? 'Record Video' : 'Take Photo'}
+                            </div>
+                            <div style="font-size: 13px; color: #8E8E93;">
+                                ${isVideo ? 'Max 15 seconds' : 'Tap to upload or capture'}
+                            </div>
+                        </div>
+
+                        <input type="file" 
+                               id="mediaInput" 
+                               accept="${isVideo ? 'video/*' : 'image/*'}" 
+                               ${isVideo ? 'capture="user"' : ''}
+                               onchange="handleMediaUpload(event, '${isVideo ? 'video' : 'photo'}')" 
+                               style="display: none;">
+                    ` : `
+                        <div style="margin-bottom: 24px;">
+                            ${mediaType === 'video' ? 
+                                `<video src="${selectedMedia}" class="preview-media" controls></video>` :
+                                `<img src="${selectedMedia}" class="preview-media">`
+                            }
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <button class="btn btn-secondary" onclick="selectedMedia=null; render();">
+                                Retake
+                            </button>
+                            <button class="btn btn-primary" onclick="handleSubmit()">
+                                ${window.currentChallengeId ? 'Submit Response' : 'Submit & Battle'}
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        
+        function handleSubmit() {
+            // Check at click time, not render time
+            if (window.currentChallengeId) {
+                submitChallengeResponse();
+            } else {
+                submitDuel();
+            }
+        }
+
+        function handleMediaUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedMedia = e.target.result;
+                mediaType = type;
+                render();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitDuel() {
+            console.log('🎯 submitDuel called');
+            console.log('📝 selectedChallenge:', selectedChallenge);
+            console.log('👤 selectedOpponent:', selectedOpponent);
+            console.log('📷 selectedMedia:', selectedMedia ? 'Present' : 'Missing');
+            
+            if (!selectedMedia) {
+                alert('Please capture media first');
+                return;
+            }
+            
+            sounds.challenge();
+            
+            // Create challenge ID
+            const challengeId = 'challenge_' + Date.now();
+            
+            // Initialize challenges array if it doesn't exist
+            if (!squad.challenges) {
+                squad.challenges = [];
+            }
+            
+            // Create challenge object
+            const challenge = {
+                id: challengeId,
+                challengeType: selectedChallenge.name,
+                challengeDesc: selectedChallenge.desc,
+                challengeTime: selectedChallenge.time,
+                challenger: currentUserId,
+                opponent: selectedOpponent,
+                challengerSubmission: selectedMedia,
+                challengerMediaType: mediaType,
+                opponentSubmission: null,
+                status: 'waiting',
+                createdAt: Date.now()
+            };
+            
+            // Add to squad
+            squad.challenges.push(challenge);
+            
+            console.log('✅ Challenge created:', challenge.id);
+            console.log('📦 Total challenges:', squad.challenges.length);
+            
+            // Save
+            saveSquad(squad);
+            
+            console.log('💾 Squad saved to storage');
+            
+            // Show confirmation
+            showModal(
+                '⚡ Challenge Sent!',
+                `
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 16px;">🎯</div>
+                    <p style="font-size: 15px; margin-bottom: 16px;">Your challenge has been sent to ${squad.members[selectedOpponent].name}!</p>
+                    <p style="font-size: 13px; color: #8E8E93;">They'll be notified to submit their entry. Check back soon to see the results!</p>
+                </div>
+                `,
+                null,     // No cancel button
+                'OK',     // Confirm button says "OK"
+                () => {   // Confirm action
+                    console.log('✅ Modal closed, going to home');
+                    closeModal();
+                    screen = 'home';
+                    selectedMedia = null;
+                    selectedChallenge = null;
+                    selectedOpponent = null;
+                    window.currentChallengeId = null;
+                    render();
+                },
+                null      // No cancel action
+            );
+        }
+        
+        function getPendingChallenges() {
+            if (!squad.challenges) return [];
+            return squad.challenges.filter(c => 
+                c.status === 'waiting' && c.opponent === currentUserId
+            );
+        }
+        
+        function getCompletedChallenges() {
+            if (!squad.challenges) return [];
+            const completed = squad.challenges.filter(c => 
+                c.status === 'completed' && 
+                (c.challenger === currentUserId || c.opponent === currentUserId) &&
+                (!c.viewedBy || !c.viewedBy.includes(currentUserId)) // hasn't been viewed by this user
+            );
+            console.log('🏆 Completed challenges for', squad.members[currentUserId]?.name + ':', completed.length);
+            return completed;
+        }
+        
+        function viewChallengeResults(challengeId) {
+            const challenge = squad.challenges.find(c => c.id === challengeId);
+            if (!challenge) return;
+            
+            // Mark as viewed
+            if (!challenge.viewedBy) {
+                challenge.viewedBy = [];
+            }
+            if (!challenge.viewedBy.includes(currentUserId)) {
+                challenge.viewedBy.push(currentUserId);
+                saveSquad(squad);
+            }
+            
+            // Show results
+            showDuelReveal(challenge);
+        }
+        
+        function respondToChallenge(challengeId) {
+            const challenge = squad.challenges.find(c => c.id === challengeId);
+            if (!challenge) return;
+            
+            // Set up for response - include full challenge details
+            selectedChallenge = { 
+                name: challenge.challengeType, 
+                desc: challenge.challengeDesc,   // ✅ Include description
+                time: challenge.challengeTime,   // ✅ Include time
+                type: challenge.challengerMediaType 
+            };
+            selectedOpponent = challenge.challenger;
+            window.currentChallengeId = challengeId;
+            screen = 'submit-media';
+            render();
+        }
+        
+        async function submitChallengeResponse() {
+            sounds.challenge();
+            
+            const challengeId = window.currentChallengeId;
+            const challenge = squad.challenges.find(c => c.id === challengeId);
+            
+            if (!challenge) {
+                alert('Challenge not found');
+                return;
+            }
+            
+            // Add opponent's submission
+            challenge.opponentSubmission = selectedMedia;
+            challenge.status = 'completed';
+            challenge.completedAt = Date.now();
+            
+            // Mark as viewed by responder (they're about to see it)
+            challenge.viewedBy = [currentUserId];
+            
+            // Save
+            saveSquad(squad);
+            
+            // NOW show duel reveal with both submissions
+            showDuelReveal(challenge);
+        }
+
+        async function showDuelReveal(challenge) {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.id = 'duelOverlay';
+            
+            // Determine who is who
+            const isChallenger = challenge.challenger === currentUserId;
+            const yourSubmission = isChallenger ? challenge.challengerSubmission : challenge.opponentSubmission;
+            const oppSubmission = isChallenger ? challenge.opponentSubmission : challenge.challengerSubmission;
+            const opponentId = isChallenger ? challenge.opponent : challenge.challenger;
+            const opponentName = squad.members[opponentId].name;
+            
+            // Judging
+            overlay.innerHTML = `
+                <div class="reveal-container">
+                    <div style="font-size: 64px; margin-bottom: 24px; animation: pulse 1.5s ease-in-out infinite;">⚖️</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #8E8E93;">
+                        AI Judge analyzing ${challenge.challengerMediaType}...
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            await sleep(1000); // Fast judging = instant dopamine
+
+            // Scores
+            const yourScore = (Math.random() * 1.5 + 7.5).toFixed(1);
+            const oppScore = (Math.random() * 1.5 + 7.5).toFixed(1);
+            const youWon = parseFloat(yourScore) > parseFloat(oppScore);
+            
+            const reasonings = [
+                "Excellent execution, great form",
+                "Creative approach, nice style",
+                "Solid performance overall",
+                "Good attempt, clean finish",
+                "Strong effort, good technique"
+            ];
+            
+            const yourReason = reasonings[Math.floor(Math.random() * reasonings.length)];
+            const oppReason = reasonings[Math.floor(Math.random() * reasonings.length)];
+
+            // Results
+            overlay.innerHTML = `
+                <div class="reveal-container">
+                    <div style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">${challenge.challengeType}</div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                        <div style="text-align: center;">
+                            ${challenge.challengerMediaType === 'video' ?
+                                `<video src="${yourSubmission}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 3px solid ${youWon ? '#D4AF37' : '#3C3C3E'};" controls>` :
+                                `<img src="${yourSubmission}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 3px solid ${youWon ? '#D4AF37' : '#3C3C3E'};">`
+                            }
+                            <div style="font-size: 15px; font-weight: 600; margin: 12px 0 8px;">You</div>
+                            <div style="font-size: 36px; font-weight: 900; color: ${youWon ? '#D4AF37' : '#8E8E93'};">${yourScore}</div>
+                            <div style="font-size: 12px; color: #8E8E93; margin-top: 8px;">"${yourReason}"</div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            ${challenge.challengerMediaType === 'video' ?
+                                `<video src="${oppSubmission}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 3px solid ${!youWon ? '#D4AF37' : '#3C3C3E'};" controls>` :
+                                `<img src="${oppSubmission}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 3px solid ${!youWon ? '#D4AF37' : '#3C3C3E'};">`
+                            }
+                            <div style="font-size: 15px; font-weight: 600; margin: 12px 0 8px;">${opponentName}</div>
+                            <div style="font-size: 36px; font-weight: 900; color: ${!youWon ? '#D4AF37' : '#8E8E93'};">${oppScore}</div>
+                            <div style="font-size: 12px; color: #8E8E93; margin-top: 8px;">"${oppReason}"</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 20px; background: ${youWon ? 'rgba(212, 175, 55, 0.1)' : 'rgba(142, 142, 147, 0.1)'}; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">
+                            ${youWon ? '🔥 YOU WIN!' : '💪 THEY WIN'}
+                        </div>
+                        <div style="font-size: 20px; font-weight: 700; color: ${youWon ? '#D4AF37' : '#8E8E93'}; margin-bottom: 4px;">
+                            ${youWon ? '+10 points' : '+0 points'}
+                        </div>
+                        ${youWon && (squad.members[currentUserId].streak || 0) >= 2 ? `
+                            <div style="font-size: 16px; font-weight: 700; color: #FF3B30; margin-top: 8px;">
+                                🔥 ${squad.members[currentUserId].streak + 1} WIN STREAK!
+                            </div>
+                        ` : ''}
+                        <div style="font-size: 14px; color: #8E8E93; margin-top: 8px;">
+                            ${squad.members[currentUserId].points} → ${squad.members[currentUserId].points + (youWon ? 10 : 0)} total
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="rematch()">🔄 Rematch</button>
+                        <button class="btn btn-primary" onclick="closeDuelReveal()">Continue</button>
+                    </div>
+                </div>
+            `;
+
+            if (youWon) {
+                sounds.victory();
+                
+                // Update points and streak
+                squad.members[currentUserId].points += 10;
+                squad.members[currentUserId].streak = (squad.members[currentUserId].streak || 0) + 1;
+                
+                // Check if opponent had a streak that just broke
+                const opponentStreakBefore = squad.members[opponentId].streak || 0;
+                if (opponentStreakBefore >= 3) {
+                    // STREAK BREAK DRAMA
+                    setTimeout(() => {
+                        sounds.defeat();
+                        const streakAlert = document.createElement('div');
+                        streakAlert.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 59, 48, 0.95); padding: 32px 48px; border-radius: 20px; font-size: 32px; font-weight: 900; color: #FFF; z-index: 20000; animation: shake 0.5s ease-in-out;';
+                        streakAlert.innerHTML = `💥 STREAK BROKEN!<br><span style="font-size: 18px; opacity: 0.8;">${squad.members[opponentId].name}'s ${opponentStreakBefore}-win streak ended!</span>`;
+                        document.body.appendChild(streakAlert);
+                        setTimeout(() => streakAlert.remove(), 2500);
+                    }, 1500);
+                }
+                squad.members[opponentId].streak = 0;
+                
+                // Check for crown change
+                const rankings = Object.entries(squad.members).sort((a, b) => b[1].points - a[1].points);
+                const newChampion = rankings[0][0];
+                const oldChampion = rankings.find(([id]) => squad.members[id].isChampion)?.[0];
+                
+                if (newChampion !== oldChampion && newChampion === currentUserId) {
+                    // CROWN TRANSFER ANIMATION
+                    setTimeout(() => {
+                        const crownAlert = document.createElement('div');
+                        crownAlert.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); background: linear-gradient(135deg, #FFD700, #FFA500); padding: 40px 60px; border-radius: 24px; font-size: 48px; font-weight: 900; color: #000; z-index: 20000; animation: crownPop 0.6s ease-out forwards; box-shadow: 0 20px 60px rgba(255, 215, 0, 0.6);';
+                        crownAlert.innerHTML = `👑<br><span style="font-size: 24px;">YOU TOOK THE CROWN!</span>`;
+                        document.body.appendChild(crownAlert);
+                        setTimeout(() => crownAlert.remove(), 3000);
+                        
+                        // Mark new champion
+                        Object.keys(squad.members).forEach(id => squad.members[id].isChampion = false);
+                        squad.members[newChampion].isChampion = true;
+                    }, 2000);
+                }
+                
+                setTimeout(() => createConfetti(), 500);
+                
+                // Save updated squad
+                saveSquad(squad);
+            } else {
+                // Lost - reset streak
+                squad.members[currentUserId].streak = 0;
+                saveSquad(squad);
+            }
+            
+            console.log('✅ Challenge completed. Points awarded:', youWon ? 10 : 0);
+        }
+
+        function rematch() {
+            closeDuelReveal();
+            selectedMedia = null;
+            screen = 'submit-media';
+            render();
+        }
+
+        function closeDuelReveal() {
+            const overlay = document.getElementById('duelOverlay');
+            if (overlay) overlay.remove();
+            screen = 'home';
+            selectedOpponent = null;
+            selectedChallenge = null;
+            selectedMedia = null;
+            window.currentChallengeId = null;
+            render();
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + '%';
+                    c.style.background = ['#D4AF37', '#FFD700', '#FFA500'][Math.floor(Math.random() * 3)];
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 3000);
+                }, i * 30);
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.1); opacity: 0.8; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        function renderSettings() {
+            return `
+                <div class="fade-in">
+                    <button style="background: none; border: none; color: #8E8E93; font-size: 15px; padding: 12px 0; cursor: pointer; margin-bottom: 20px;" onclick="screen='home'; render();">← Back</button>
+
+                    <div style="font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8E8E93; margin-bottom: 16px;">⚙️ Squad Settings (Admin)</div>
+
+                    <div style="background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <div style="font-size: 17px; font-weight: 600; margin-bottom: 8px;">${squad.name || 'The Smiths'}</div>
+                        <div style="font-size: 13px; color: #8E8E93; margin-bottom: 4px;">Admin: ${Object.values(squad.members).find(m => m.isAdmin)?.name || 'Unknown'}</div>
+                        <div style="font-size: 13px; color: #8E8E93;">Members: ${Object.keys(squad.members).length}</div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05)); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #FFD700;">📲 Invite Squad Members</div>
+                        <p style="font-size: 13px; color: #FFFFFF; margin-bottom: 16px;">Share this code so others can join:</p>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 1; padding: 16px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; text-align: center;">
+                                <div style="font-size: 28px; font-weight: 900; letter-spacing: 6px; color: #FFD700;">${squad.code}</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" style="margin-bottom: 8px;" onclick="copyCode('${squad.code}')">
+                            📋 Copy Squad Code
+                        </button>
+                        <button class="btn btn-secondary" onclick="shareCode('${squad.code}')">
+                            📤 Share via SMS/Link
+                        </button>
+                    </div>
+
+                    <div style="font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8E8E93; margin-bottom: 16px;">👥 Squad Members</div>
+
+                    ${Object.entries(squad.members).map(([id, m]) => `
+                        <div style="background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: ${m.isMinor ? '12px' : '0'};">
+                                <div style="font-size: 32px;">${m.avatar}</div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 17px; font-weight: 600;">${m.name}${id === currentUserId ? ' (You)' : ''}${m.isAdmin ? ' 👑' : ''}</div>
+                                    <div style="font-size: 13px; color: #8E8E93;">
+                                        ${m.isMinor ? `Minor • Age ${m.age}` : 'Adult'}
+                                        ${m.status === 'paused' ? ' • ⏸️ Paused' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            ${!m.isAdmin && m.isMinor ? `
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button style="padding: 8px 16px; font-size: 13px; border-radius: 8px; border: 1px solid #3C3C3E; background: #2C2C2E; color: #F5F5F7; cursor: pointer;" onclick="viewActivity('${id}')">View Activity</button>
+                                    <button style="padding: 8px 16px; font-size: 13px; border-radius: 8px; border: 1px solid #3C3C3E; background: #2C2C2E; color: #F5F5F7; cursor: pointer;" onclick="pauseMember('${id}')">${m.status === 'paused' ? 'Unpause' : 'Pause'} Account</button>
+                                </div>
+                            ` : ''}
+                            ${!m.isAdmin ? `
+                                <button style="padding: 8px 16px; font-size: 13px; border-radius: 8px; border: 1px solid #FF3B30; background: rgba(255, 59, 48, 0.1); color: #FF3B30; cursor: pointer; margin-top: ${m.isMinor ? '8px' : '0'};" onclick="removeMember('${id}', '${m.name}')">Remove Member</button>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+
+                    <button style="width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%); color: #0A0A0C; margin-bottom: 16px;" onclick="showInvite()">
+                        + Invite Member
+                    </button>
+
+                    <div style="height: 1px; background: #2C2C2E; margin: 32px 0;"></div>
+
+                    <div style="font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8E8E93; margin-bottom: 16px;">🛡️ Safety & Privacy</div>
+
+                    <div style="background: rgba(255, 149, 0, 0.1); border: 2px solid rgba(255, 149, 0, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                        <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">⚠️ Parent Controls Active</div>
+                        <div style="font-size: 13px; color: #F5F5F7; line-height: 1.6;">
+                            • All content private to squad<br>
+                            • Minors supervised by parent<br>
+                            • You can review all activity<br>
+                            • COPPA compliant
+                        </div>
+                    </div>
+
+                    <button style="width: 100%; padding: 14px; border: 1px solid #3C3C3E; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: #2C2C2E; color: #F5F5F7; margin-bottom: 12px;" onclick="showTerms()">
+                        📜 View Terms of Service
+                    </button>
+
+                    <button style="width: 100%; padding: 14px; border: 1px solid #3C3C3E; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: #2C2C2E; color: #F5F5F7; margin-bottom: 12px;" onclick="showPrivacy()">
+                        🔒 View Privacy Policy
+                    </button>
+
+                    <div style="height: 1px; background: #2C2C2E; margin: 32px 0;"></div>
+
+                    <div style="font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8E8E93; margin-bottom: 16px;">⚠️ Danger Zone</div>
+
+                    <button style="width: 100%; padding: 14px; border: 1px solid #FF3B30; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: rgba(255, 59, 48, 0.1); color: #FF3B30;" onclick="deleteSquad()">
+                        Delete Squad
+                    </button>
+                </div>
+            `;
+        }
+
+        // ADMIN ACTIONS
+        function viewActivity(memberId) {
+            const member = squad.members[memberId];
+            showModal(
+                `${member.avatar} ${member.name}'s Activity`,
+                `
+                    <div style="text-align: left;">
+                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Recent Duels (Last 7 Days)</div>
+                        <div style="background: #2C2C2E; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px;">
+                            <div style="color: #8E8E93; margin-bottom: 4px;">Jan 28, 3:45 PM</div>
+                            <div>Best Sneaker Collection vs Dad</div>
+                            <div style="color: #34C759;">Won 8.4 - 7.9</div>
+                        </div>
+                        <div style="background: #2C2C2E; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px;">
+                            <div style="color: #8E8E93; margin-bottom: 4px;">Jan 27, 2:10 PM</div>
+                            <div>Best Bottle Flip Landing vs Sister</div>
+                            <div style="color: #FF3B30;">Lost 7.8 - 8.2</div>
+                        </div>
+                        <div style="background: #2C2C2E; padding: 12px; border-radius: 8px; font-size: 13px;">
+                            <div style="color: #8E8E93; margin-bottom: 4px;">Jan 26, 11:30 AM</div>
+                            <div>Most Stacked Burger vs Mom</div>
+                            <div style="color: #34C759;">Won 8.9 - 8.1</div>
+                        </div>
+                    </div>
+                `,
+                'Close'
+            );
+        }
+
+        function pauseMember(memberId) {
+            const member = squad.members[memberId];
+            const action = member.status === 'paused' ? 'Unpause' : 'Pause';
+            showModal(
+                `${action} ${member.name}'s Account?`,
+                `
+                    <div style="text-align: left; font-size: 14px; line-height: 1.6;">
+                        This will ${member.status === 'paused' ? 'reactivate' : 'temporarily disable'} ${member.name}'s account.
+                        <br><br>
+                        ${member.status === 'paused' ? 'They will be able to compete again.' : 'They will not be able to start new duels until you unpause them.'}
+                        <br><br>
+                        Their points and history will be preserved.
+                    </div>
+                `,
+                'Cancel',
+                action,
+                () => {
+                    member.status = member.status === 'paused' ? 'active' : 'paused';
+                    closeModal();
+                    render();
+                }
+            );
+        }
+
+        function removeMember(memberId, memberName) {
+            showModal(
+                `Remove ${memberName}?`,
+                `
+                    <div style="text-align: left; font-size: 14px; line-height: 1.6;">
+                        <strong>This will permanently remove ${memberName} from your squad.</strong>
+                        <br><br>
+                        • They will lose access to the app<br>
+                        • Their points and history will be deleted<br>
+                        • They will need a new invite to rejoin<br>
+                        <br>
+                        <strong>This action cannot be undone.</strong>
+                    </div>
+                `,
+                'Cancel',
+                'Remove',
+                () => {
+                    delete squad.members[memberId];
+                    closeModal();
+                    render();
+                }
+            );
+        }
+
+        function showInvite() {
+            showModal(
+                '+ Invite Squad Member',
+                `
+                    <div style="text-align: left; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                        Who are you inviting?
+                    </div>
+                    <button style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #D4AF37; color: #0A0A0C; margin-bottom: 12px;" onclick="closeModal(); showInviteAdult();">
+                        Invite Adult (18+)
+                    </button>
+                    <button style="width: 100%; padding: 14px; border: 1px solid #3C3C3E; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #2C2C2E; color: #F5F5F7;" onclick="closeModal(); showInviteMinor();">
+                        Invite Minor Child (Under 18)
+                    </button>
+                `,
+                'Cancel'
+            );
+        }
+
+        function showInviteAdult() {
+            showModal(
+                '👥 Invite Adult',
+                `
+                    <div style="text-align: center; margin: 20px 0;">
+                        <div style="font-size: 13px; color: #8E8E93; margin-bottom: 12px;">Share this code:</div>
+                        <div style="background: #2C2C2E; border: 2px dashed #D4AF37; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                            <div style="font-size: 28px; font-weight: 900; letter-spacing: 4px; color: #D4AF37;">SMITH-2025</div>
+                        </div>
+                        <div style="font-size: 13px; color: #8E8E93; line-height: 1.6; text-align: left;">
+                            <strong>How it works:</strong><br>
+                            1. They download the VERSUS app<br>
+                            2. Tap "Join Squad"<br>
+                            3. Enter code: SMITH-2025<br>
+                            4. Create their profile<br>
+                            5. Start competing!
+                        </div>
+                    </div>
+                `,
+                'Done'
+            );
+        }
+
+        function showInviteMinor() {
+            showModal(
+                '👶 Invite Minor Child',
+                `
+                    <div style="text-align: left; font-size: 14px; line-height: 1.6;">
+                        <strong>Parental Consent Required</strong>
+                        <br><br>
+                        To invite a minor child, you must:
+                        <br><br>
+                        ✓ Be their parent or legal guardian<br>
+                        ✓ Consent to their participation<br>
+                        ✓ Monitor their use of the app<br>
+                        ✓ Review their submissions<br>
+                        <br>
+                        In production, you would enter their name, age, and select their avatar here.
+                        <br><br>
+                        A special minor invite code would be generated for them.
+                    </div>
+                `,
+                'Got It'
+            );
+        }
+
+        function showTerms() {
+            showModal(
+                '📜 Terms of Service',
+                `
+                    <div style="text-align: left; font-size: 12px; line-height: 1.6; max-height: 400px; overflow-y: auto;">
+                        <strong>VERSUS TERMS OF SERVICE</strong><br><br>
+                        <strong>1. PARENT/GUARDIAN TERMS</strong><br>
+                        By creating a squad account, you agree that:<br>
+                        • You are 18+ years old<br>
+                        • You are the parent/guardian of any minors<br>
+                        • You consent to their participation<br>
+                        • You will monitor their use<br>
+                        • Photos/videos processed by AI<br>
+                        <br>
+                        <strong>2. MINORS' USE</strong><br>
+                        • Under 13: Cannot create accounts<br>
+                        • Parents must invite & supervise<br>
+                        • Parental consent required<br>
+                        <br>
+                        <strong>3. PRIVACY</strong><br>
+                        • COPPA compliant<br>
+                        • Parents control all minor data<br>
+                        • Content private to squad<br>
+                        <br>
+                        Contact: legal@versus.app
+                    </div>
+                `,
+                'Close'
+            );
+        }
+
+        function showPrivacy() {
+            showModal(
+                '🔒 Privacy Policy',
+                `
+                    <div style="text-align: left; font-size: 12px; line-height: 1.6; max-height: 400px; overflow-y: auto;">
+                        <strong>CHILDREN'S PRIVACY (COPPA)</strong><br><br>
+                        <strong>For Users Under 13:</strong><br>
+                        We collect ONLY:<br>
+                        • Name (parent-provided)<br>
+                        • Avatar (emoji)<br>
+                        • Photos/videos for challenges<br>
+                        • Scores and points<br>
+                        <br>
+                        We do NOT collect:<br>
+                        • Email addresses<br>
+                        • Phone numbers<br>
+                        • Location data<br>
+                        • Browsing history<br>
+                        <br>
+                        <strong>Parent Rights:</strong><br>
+                        • Review all data<br>
+                        • Request deletion<br>
+                        • Revoke consent<br>
+                        • Export data<br>
+                        <br>
+                        Contact: privacy@versus.app
+                    </div>
+                `,
+                'Close'
+            );
+        }
+
+        function deleteSquad() {
+            showModal(
+                '⚠️ Delete Squad?',
+                `
+                    <div style="text-align: left; font-size: 14px; line-height: 1.6;">
+                        <strong style="color: #FF3B30;">This will permanently delete your entire squad.</strong>
+                        <br><br>
+                        Everything will be deleted:<br>
+                        • All member accounts<br>
+                        • All challenge history<br>
+                        • All points and rankings<br>
+                        <br>
+                        <strong>This action cannot be undone.</strong>
+                    </div>
+                `,
+                'Cancel',
+                'Delete Forever',
+                () => {
+                    // Actually delete everything
+                    localStorage.clear();
+                    squadCode = null;
+                    currentUserId = null;
+                    squad = null;
+                    closeModal();
+                    location.reload();
+                },
+                () => {
+                    closeModal();
+                }
+            );
+        }
+
+        // MODAL SYSTEM
+        function showModal(title, content, cancelText, confirmText, confirmAction, cancelAction) {
+            const modal = document.createElement('div');
+            modal.id = 'modalOverlay';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 10, 12, 0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
+            
+            // Determine button color based on action type
+            const isDanger = confirmText && (confirmText.includes('Delete') || confirmText.includes('Remove'));
+            const buttonBg = isDanger ? '#FF3B30' : 'linear-gradient(135deg, #FFD700, #FFA500)';
+            const buttonColor = isDanger ? '#FFF' : '#0A0A0C';
+            
+            modal.innerHTML = `
+                <div style="background: #1C1C1E; border: 2px solid #2C2C2E; border-radius: 16px; padding: 24px; max-width: 400px; width: 100%;">
+                    <div style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">${title}</div>
+                    <div style="margin-bottom: 24px;">${content}</div>
+                    <div style="display: grid; grid-template-columns: ${cancelText && confirmText ? '1fr 1fr' : '1fr'}; gap: 12px;">
+                        ${cancelText ? `<button style="padding: 14px; border: 1px solid #3C3C3E; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; background: #2C2C2E; color: #F5F5F7;" onclick="modalCancelAction()">${cancelText}</button>` : ''}
+                        ${confirmText ? `<button style="padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; background: ${buttonBg}; color: ${buttonColor};" onclick="modalConfirmAction()">${confirmText}</button>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            window.currentModalAction = confirmAction;
+            window.currentModalCancelAction = cancelAction;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modalOverlay');
+            if (modal) modal.remove();
+            window.currentModalAction = null;
+            window.currentModalCancelAction = null;
+        }
+
+        function modalConfirmAction() {
+            if (window.currentModalAction) {
+                window.currentModalAction();
+            } else {
+                closeModal();
+            }
+        }
+
+        function modalCancelAction() {
+            if (window.currentModalCancelAction) {
+                window.currentModalCancelAction();
+            } else {
+                closeModal();
+            }
+        }
+
+        // INIT
+        // Load existing squad data
+        squad = getSquad();
+        
+        // Log Firebase status prominently
+        console.log('═══════════════════════════════════════');
+        console.log('🔥 FIREBASE STATUS');
+        console.log('═══════════════════════════════════════');
+        console.log('useFirebase:', useFirebase);
+        if (useFirebase) {
+            console.log('✅ Firebase is ENABLED');
+            console.log('📡 Real-time sync will work across devices');
+        } else {
+            console.log('❌ Firebase is DISABLED');
+            console.log('⚠️  Changes will NOT sync between devices');
+            console.log('⚠️  App will only work on THIS device');
+        }
+        console.log('═══════════════════════════════════════');
+        
+        // Check if user is logged in
+        if (squadCode && currentUserId && squad && squad.members && squad.members[currentUserId]) {
+            screen = 'home';
+            console.log('✅ User logged in:', squad.members[currentUserId].name);
+            
+            // Start listening to Firebase if enabled
+            if (useFirebase && squadCode) {
+                listenToSquadChanges(squadCode);
+            }
+        } else {
+            screen = 'welcome';
+            console.log('⚠️ No valid session, going to welcome screen');
+        }
+        
+        render();
+    </script>
+</body>
+</html>
