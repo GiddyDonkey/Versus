@@ -74,4 +74,4 @@ self.addEventListener('notificationclick', function(event) {
             return self.clients.openWindow(targetUrl);
         })
     );
-}););
+});
