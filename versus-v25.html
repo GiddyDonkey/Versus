@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>VERSUS</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; overflow-x:hidden; -webkit-tap-highlight-color:transparent; }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+  @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(255,215,0,.1)}50%{box-shadow:0 0 20px rgba(255,215,0,.25)}}
+  @keyframes countPulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}100%{transform:scale(1);opacity:1}}
+  @keyframes toastIn{from{transform:translateY(-30px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes dotPulse{0%,100%{opacity:1;box-shadow:0 0 4px rgba(255,69,58,.3)}50%{opacity:.5;box-shadow:0 0 8px rgba(255,69,58,.5)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+// ==================== DATA ====================
+const SEASON = { n:3, wk:2, total:3, done:6, max:9, left:3 };
+const YOU = "3";
+const PO = 4;
+const W3X = 1.5;
+const SQUAD = { name:"The Legends", code:"LEGENDS-7K" };
+
+const MEM = [
+  { id:"1",nm:"Mom",av:"👩🏻",pts:24,prev:2,str:3,sub:6,w:3,q:true,admin:true },
+  { id:"2",nm:"Tyler",av:"👦🏽",pts:22,prev:1,str:0,sub:6,w:2,q:true,age:15,minor:true },
+  { id:"3",nm:"Dad",av:"👨🏻",pts:21,prev:3,str:1,sub:5,w:1,q:true },
+  { id:"4",nm:"Sarah",av:"👧🏼",pts:18,prev:4,str:0,sub:5,w:0,q:true },
+  { id:"5",nm:"Grandma",av:"👵🏻",pts:15,prev:5,str:0,sub:3,w:0,q:false },
+];
+
+const ACTIVE_CH = {
+  id:"c6", n:6, type:"snap", prompt:"Proof you're not on your couch right now",
+  rule:"📸 Snap wherever you are. No faking it.",
+  dl:51720, weight:"1.5×",
+  subs:{"1":true,"2":true,"3":false,"4":true,"5":false},
+  captain:{id:"2",nm:"Tyler",av:"👦🏽"},
+};
+
+const CAPTAIN_QUEUE = [
+  { n:7, captain:{id:"3",nm:"Dad",av:"👨🏻"}, status:"pending", deadline: Date.now()+14400000 },
+  { n:8, captain:{id:"4",nm:"Sarah",av:"👧🏼"}, status:"upcoming" },
+  { n:9, captain:{id:"5",nm:"Grandma",av:"👵🏻"}, status:"upcoming" },
+];
+
+const CH_OPTIONS = [
+  "What's in front of you right now",
+  "Prove you left the house today",
+  "The last thing you ate or drank",
+  "Your shoes right now",
+  "Best angle of your face — 3 seconds, go",
+  "Something that made you smile today",
+  "Your current view from where you're sitting",
+  "The oldest thing within arm's reach",
+  "Proof you're not on your couch right now",
+  "The most interesting thing within 10 feet of you",
+  "Show us your current vibe in one photo",
+  "What does your day look like right now",
+  "Your surroundings — no context, just snap",
+  "Action shot — you doing literally anything",
+  "The weather where you are right now",
+];
+
+const VOTING_CH = {
+  id:"c5", n:5, type:"snap", prompt:"Your current view — no context, just snap",
+  rule:"📸 Whatever you see. No filters.", vdl:22200, weight:"1.5×",
+};
+
+const SCORED = [
+  { id:"c4",n:4,prompt:"Prove you left the house today",type:"snap",
+    res:[{mid:"2",pl:1,pts:5,nm:"Tyler"},{mid:"1",pl:2,pts:3,nm:"Mom"},{mid:"3",pl:3,pts:2,nm:"Dad"},{mid:"4",pl:4,pts:1,nm:"Sarah"},{mid:"5",pl:null,pts:0,nm:"Grandma",dns:true}] },
+  { id:"c3",n:3,prompt:"The last thing you ate or drank",type:"snap",
+    res:[{mid:"1",pl:1,pts:5,nm:"Mom"},{mid:"3",pl:2,pts:3,nm:"Dad"},{mid:"2",pl:3,pts:2,nm:"Tyler"},{mid:"4",pl:4,pts:1,nm:"Sarah"},{mid:"5",pl:null,pts:0,nm:"Grandma",dns:true}] },
+];
+
+const CALLOUTS = [
+  { id:"d1",from:"2",to:"3",fromNm:"Tyler",toNm:"Dad",prompt:"Best angle of your face right now",st:"active",dl:28800 },
+  { id:"d2",from:"1",to:"4",fromNm:"Mom",toNm:"Sarah",prompt:"Your shoes right now",st:"scored",winner:"1",winNm:"Mom",loserNm:"Sarah" },
+  { id:"d3",from:"3",to:"2",fromNm:"Dad",toNm:"Tyler",prompt:"Oldest thing within arm's reach",st:"scored",winner:"3",winNm:"Dad",loserNm:"Tyler" },
+];
+
+const FEED = [
+  { icon:"🎯", text:"Tyler picked Ch.6: 'Proof you're not on your couch'", sub:"Challenge Captain · 1.5× snap", time:"6h ago", color:"#FFD700" },
+  { icon:"⚔️", text:"Tyler challenged Dad — 'Best angle of your face'", sub:"Callout · 8h left", time:"2h ago", color:"#0A84FF" },
+  { icon:"🏆", text:"Tyler won Ch.4 — 'Prove you left the house'", sub:"+5 pts · Grandma DNS'd again", time:"4h ago", color:"#FFD700" },
+  { icon:"⚖️", text:"Dad beat Tyler — 'Oldest thing within arm's reach'", sub:"Callout · Dad +3, Tyler -1", time:"1d ago", color:"#AF52DE" },
+  { icon:"👑", text:"Mom beat Sarah — 'Your shoes right now'", sub:"Callout · Mom +3, Sarah -1", time:"1d ago", color:"#FFD700" },
+  { icon:"🔥", text:"Mom hit a 3-win streak", sub:"Leading the pack", time:"2d ago", color:"#FF9500" },
+];
+
+const WYWA = {
+  lastSeen: Date.now() - 4*3600000,
+  hero: { rank:3, prev:2, passedBy:"Tyler", prob:64, prevProb:78 },
+  feed: [
+    { text:"Ch.4: Tyler won 'Prove you left the house' (+5)", color:"#AEAEB2" },
+    { text:"Mom beat Sarah in a callout (+3/-1)", color:"#6E6E73" },
+    { text:"You missed Ch.4 — that's 2 of 6 allowed", color:"#FF6B6B" },
+  ],
+  cta: { text:"Ch.6 is live. You haven't snapped.", time:51720 },
+};
+
+const CHAMPS = [
+  { s:1, nm:"Dad", av:"👨🏻" },
+  { s:2, nm:"Mom", av:"👩🏻" },
+];
+
+const BANTER = [
+  "Tyler's been suspiciously good at these... someone check his camera roll 👀",
+  "Mom and Tyler are separated by 2 points. One bad snap changes everything.",
+  "Dad's been climbing quietly. Nobody's paying attention.",
+  "3 challenges left. Every placement is 1.5×. Math doesn't care about feelings.",
+  "Grandma has DNS'd 3 times. It takes 5 seconds to snap a photo, Grandma.",
+  "Has anyone actually seen Grandma participate or is she just spectating?",
+  "Week 3 multiplier means one DNS costs 7.5 points. Just snap the photo.",
+  "Sarah hasn't won a single challenge. Season 3 might not be her season.",
+];
+
+const CALLOUT_PROMPTS = [
+  "Best angle of your face right now","Your shoes — go","Oldest thing near you",
+  "Prove you're being productive","Something weird you can see","Your current drink",
+];
+
+const VOTE_SUBS = [
+  {mid:"1",nm:"Mom",av:"👩🏻"},{mid:"2",nm:"Tyler",av:"👦🏽"},{mid:"4",nm:"Sarah",av:"👧🏼"},
+];
+
+// ==================== UTILITIES ====================
+const Sounds = {
+  _c:null, _g(){if(!this._c)this._c=new(window.AudioContext||window.webkitAudioContext)();return this._c;},
+  p(f,d=.15,t="sine"){try{const c=this._g(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(.08,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d);}catch(e){}},
+  victory(){this.p(600,.12);setTimeout(()=>this.p(800,.2),120);},
+  snap(){this.p(900,.05);setTimeout(()=>this.p(700,.05),50);},
+  reveal(){this.p(500,.1);setTimeout(()=>this.p(650,.15),100);},
+  toast(){this.p(550,.08);},
+  cd(n){this.p(n<=1?800:440,.1);},
+};
+
+function fmtTime(s){
+  if(s<=0)return{t:"EXPIRED",c:"#FF3B30",crit:true};
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+  if(h>4)return{t:`${h}h ${m}m`,c:"#FFD700",crit:false};
+  if(h>=1)return{t:`${h}h ${m}m`,c:"#FF9500",crit:false};
+  return{t:`${m}m`,c:"#FF3B30",crit:true};
+}
+
+function calcProb(mems,rem,mult,sims=8000){
+  const mp=[5,3,2,1,0].map(p=>p*mult);
+  const ct={};mems.forEach(m=>{ct[m.id]=0;});
+  for(let s=0;s<sims;s++){
+    const t={};mems.forEach(m=>{t[m.id]=m.pts;});
+    for(let r=0;r<rem;r++){const o=mems.map(m=>m.id);for(let i=o.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[o[i],o[j]]=[o[j],o[i]];}o.forEach((id,p)=>{t[id]+=mp[p]||0;});}
+    const rk=mems.map(m=>({id:m.id,t:t[m.id]})).sort((a,b)=>b.t-a.t);
+    for(let i=0;i<Math.min(PO,rk.length);i++)ct[rk[i].id]++;
+  }
+  const r={};mems.forEach(m=>{r[m.id]=Math.round((ct[m.id]/sims)*100);});return r;
+}
+
+// ==================== COMPONENT ====================
+function Versus() {
+  const [tab, setTab] = useState("arena");
+  const [view, setView] = useState(null);
+  const [subbed, setSubbed] = useState(false);
+  const [snapCD, setSnapCD] = useState(null);
+  const [voted, setVoted] = useState(false);
+  const [voteOrder, setVoteOrder] = useState(VOTE_SUBS.filter(s=>s.mid!==YOU));
+  const [revealStep, setRevealStep] = useState(0);
+  const [showWYWA, setShowWYWA] = useState(true);
+  const [wywaStep, setWywaStep] = useState(0);
+  const [toasts, setToasts] = useState([]);
+  const [calloutTarget, setCalloutTarget] = useState(null);
+  const [calloutSent, setCalloutSent] = useState(false);
+  const [showStir, setShowStir] = useState(false);
+  const [stirText, setStirText] = useState("");
+  const [stirSent, setStirSent] = useState(false);
+  const [stirCount, setStirCount] = useState(0);
+  const [seasonLen, setSeasonLen] = useState("3wk");
+  const [chalFreq, setChalFreq] = useState("mwf");
+  const [respWindow, setRespWindow] = useState("24h");
+  const [voteWindow, setVoteWindow] = useState("8h");
+  const [tick, setTick] = useState(0);
+  const t0 = useRef(Date.now());
+  const tid = useRef(0);
+
+  const addToast = useCallback((msg,type="info")=>{
+    const id=++tid.current; Sounds.toast();
+    setToasts(p=>[...p,{id,msg,type}]);
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3000);
+  },[]);
+
+  useEffect(()=>{const i=setInterval(()=>setTick(t=>t+1),15000);return()=>clearInterval(i);},[]);
+  const live = useCallback(s=>Math.max(0,s-Math.floor((Date.now()-t0.current)/1000)),[]);
+
+  const WYWA_STEPS = 2 + WYWA.feed.length + 1;
+  useEffect(()=>{
+    if(!showWYWA||wywaStep>=WYWA_STEPS)return;
+    const d=wywaStep===0?500:wywaStep<=2?700:wywaStep<WYWA_STEPS-1?300:600;
+    const t=setTimeout(()=>{if(wywaStep<2)Sounds.reveal();setWywaStep(s=>s+1);},d);
+    return()=>clearTimeout(t);
+  },[showWYWA,wywaStep]);
+
+  const probs = useMemo(()=>calcProb(MEM,SEASON.left,W3X),[]);
+  const me = MEM.find(m=>m.id===YOU);
+  const leader = MEM[0];
+  const myRank = MEM.findIndex(m=>m.id===YOU)+1;
+  const gapToFirst = leader.pts - me.pts;
+
+  const doSnap = ()=>{Sounds.snap();setSnapCD(3);let c=3;const i=setInterval(()=>{c--;Sounds.cd(c);if(c<=0){clearInterval(i);setSnapCD(null);setSubbed(true);Sounds.victory();addToast("📸 Snapped!","victory");}else setSnapCD(c);},600);};
+  const doVote = ()=>{setVoted(true);Sounds.victory();addToast("🗳️ Rankings submitted!","victory");setTimeout(()=>setView(null),2000);};
+  const mv = (f,t)=>{const u=[...voteOrder];const[item]=u.splice(f,1);u.splice(t,0,item);setVoteOrder(u);};
+  const showRes = (ch)=>{setView("results");setRevealStep(0);let s=0;const t=setInterval(()=>{s++;Sounds.reveal();setRevealStep(s);if(s>=(ch.res?.length||0)+1)clearInterval(t);},600);};
+  const tapRival = m=>{if(m.id!==YOU){setCalloutTarget(m);setCalloutSent(false);}};
+  const sendCallout = p=>{setCalloutSent(true);Sounds.snap();addToast(`⚔️ Callout sent to ${calloutTarget.nm}!`,"challenge");setTimeout(()=>setCalloutTarget(null),2000);};
+  const openStir = ()=>{setShowStir(true);setStirText(BANTER[Math.floor(Math.random()*BANTER.length)]);setStirSent(false);};
+  const sendStir = ()=>{if(stirCount>=3)return;setStirSent(true);setStirCount(c=>c+1);Sounds.snap();addToast("🔥 Sent to squad!","challenge");};
+
+  const B = ({children,onClick,style:s,...r})=><button onClick={onClick} style={{border:"none",cursor:"pointer",fontWeight:700,fontFamily:"inherit",...s}} {...r}>{children}</button>;
+  const pc = p=>p>=90?"#34C759":p>=70?"#30D158":p>=50?"#FFD60A":p>=30?"#FF9F0A":p>=10?"#FF6B6B":"#FF3B30";
+
+  return (
+    <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"#000",color:"#FFF",fontFamily:"'Inter',-apple-system,sans-serif",WebkitFontSmoothing:"antialiased",position:"relative"}}>
+
+      {/* TOASTS */}
+      <div style={{position:"fixed",top:12,left:"50%",transform:"translateX(-50%)",zIndex:999,display:"flex",flexDirection:"column",gap:6,alignItems:"center",width:"90%",maxWidth:400,pointerEvents:"none"}}>
+        {toasts.map(t=>{
+          const c={info:"#0A84FF",challenge:"#FF9500",victory:"#34C759"}[t.type]||"#0A84FF";
+          return <div key={t.id} style={{background:"#1C1C1E",border:`1px solid ${c}40`,borderRadius:10,padding:"8px 14px",fontSize:12,fontWeight:600,color:c,boxShadow:`0 4px 16px ${c}30`,animation:"toastIn .3s ease",width:"100%",textAlign:"center"}}>{t.msg}</div>;
+        })}
+      </div>
+
+      {/* ===== WYWA ===== */}
+      {showWYWA && <div style={{position:"fixed",inset:0,background:"#06070B",zIndex:300,display:"flex",justifyContent:"center"}}>
+        <div style={{width:"100%",maxWidth:480,display:"flex",flexDirection:"column",background:"radial-gradient(ellipse at 50% 12%, rgba(255,120,40,.07) 0%, rgba(80,60,180,.02) 30%, #06070B 55%)"}}>
+          <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 20px"}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{opacity:wywaStep>=1?1:0,transform:wywaStep>=1?"scale(1) translateY(0)":"scale(.85) translateY(20px)",transition:"all .6s cubic-bezier(.2,1,.3,1)"}}>
+                <div style={{fontSize:11,color:"#6E6E73",letterSpacing:3,textTransform:"uppercase",fontWeight:600,marginBottom:12}}>{Math.floor((Date.now()-WYWA.lastSeen)/3600000)}h since you checked in</div>
+                <div style={{background:"linear-gradient(180deg, rgba(255,120,50,.04) 0%, rgba(255,50,30,.02) 60%, rgba(255,255,255,.01) 100%)",border:"1px solid rgba(255,160,80,.1)",borderRadius:16,padding:"28px 20px 22px",position:"relative",overflow:"hidden"}}>
+                  <div style={{position:"absolute",top:"35%",left:"63%",transform:"translate(-50%,-50%)",width:160,height:130,borderRadius:"50%",background:"radial-gradient(circle, rgba(255,159,10,.12) 0%, rgba(255,100,10,.04) 50%, transparent 70%)",filter:"blur(30px)",pointerEvents:"none"}}/>
+                  <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:8,position:"relative"}}>
+                    <span style={{fontSize:48,fontWeight:900,color:"#2C2C2E",lineHeight:1}}>#{WYWA.hero.prev}</span>
+                    <span style={{fontSize:20,color:"#48484A",marginBottom:4}}>→</span>
+                    <span style={{fontSize:72,fontWeight:900,color:"#FF9F0A",lineHeight:1,textShadow:"0 0 40px rgba(255,159,10,.25), 0 0 80px rgba(255,120,10,.1)"}}>#{WYWA.hero.rank}</span>
+                  </div>
+                  <div style={{fontSize:17,color:"#FFF",fontWeight:700,marginTop:10,position:"relative"}}>{WYWA.hero.passedBy} passed you</div>
+                  <div style={{marginTop:18,paddingTop:14,borderTop:"1px solid rgba(255,255,255,.05)",opacity:wywaStep>=2?1:0,transition:"opacity .4s ease",position:"relative"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                      <span style={{fontSize:12,color:"#48484A",fontWeight:600}}>Playoff odds</span>
+                      <span style={{fontSize:18,fontWeight:900,color:"#48484A"}}>{WYWA.hero.prevProb}%</span>
+                      <span style={{fontSize:14,color:"#48484A"}}>→</span>
+                      <span style={{fontSize:24,fontWeight:900,color:"#FF453A",textShadow:"0 0 20px rgba(255,69,58,.15)"}}>{WYWA.hero.prob}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style={{marginTop:10,opacity:wywaStep>=3?1:0,transition:"all .3s ease"}}>
+                {WYWA.feed.map((item,i)=>{
+                  const vis=wywaStep>=3+i, warn=item.color==="#FF6B6B";
+                  return <div key={i} style={{opacity:vis?1:0,transition:"opacity .25s ease",padding:"9px 14px",marginBottom:3,borderRadius:8,textAlign:"left",background:warn?"rgba(255,69,58,.06)":"rgba(255,255,255,.025)",border:warn?"1px solid rgba(255,69,58,.12)":"1px solid rgba(255,255,255,.04)"}}>
+                    <div style={{fontSize:13,color:warn?"#FF6B6B":"#AEAEB2",lineHeight:1.4,fontWeight:warn?600:400}}>{item.text}</div>
+                  </div>;
+                })}
+              </div>
+            </div>
+          </div>
+          <div style={{padding:"0 20px 36px",flex:"none"}}>
+            {wywaStep>=WYWA_STEPS&&<div style={{animation:"fadeUp .3s ease"}}>
+              <div style={{background:"rgba(255,69,58,.05)",border:"1px solid rgba(255,69,58,.1)",borderRadius:10,padding:"12px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:4,background:"#FF453A",animation:"dotPulse 1s ease-in-out infinite"}}/>
+                  <span style={{fontSize:13,fontWeight:700,color:"#E5E5EA"}}>{WYWA.cta.text}</span>
+                </div>
+                <div style={{fontSize:12,fontWeight:900,color:"#FF9F0A",flexShrink:0}}>{fmtTime(live(WYWA.cta.time)).t}</div>
+              </div>
+              <B onClick={()=>{Sounds.snap();setShowWYWA(false);addToast("⚡ Welcome back!","info");}} style={{width:"100%",padding:16,borderRadius:12,fontSize:17,fontWeight:800,background:"linear-gradient(135deg,#FFD60A,#FF9F0A)",color:"#000",boxShadow:"0 6px 28px rgba(255,200,10,.2)"}}>Let's Go</B>
+            </div>}
+          </div>
+        </div>
+      </div>}
+
+
+      {/* ===== HEADER ===== */}
+      <div style={{padding:"14px 20px",borderBottom:"1px solid #1C1C1E",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#000",position:"sticky",top:0,zIndex:100}}>
+        <div style={{fontSize:12,color:"#6E6E73",fontWeight:600}}>{SQUAD.name}</div>
+        <div>
+          <div style={{fontSize:22,fontWeight:900,letterSpacing:3,background:"linear-gradient(135deg,#FFD700,#FFA500)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",textAlign:"center"}}>VERSUS</div>
+          <div style={{fontSize:7,color:"#6E6E73",textAlign:"center",letterSpacing:2,textTransform:"uppercase"}}>EVERY SNAP MATTERS</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <B onClick={()=>setView("settings")} style={{background:"none",fontSize:16,padding:0,color:"#6E6E73"}}>⚙️</B>
+          <div style={{fontSize:22}}>{me?.av}</div>
+        </div>
+      </div>
+
+      {/* NAV */}
+      {!view&&<div style={{display:"flex",gap:8,padding:"10px 20px",background:"#0A0A0C",borderBottom:"1px solid #1C1C1E",position:"sticky",top:53,zIndex:99}}>
+        {[{k:"arena",i:"⚔️",l:"Arena"},{k:"ladder",i:"👑",l:"Ladder"}].map(t=>(
+          <B key={t.k} onClick={()=>setTab(t.k)} style={{flex:1,padding:10,borderRadius:8,fontSize:13,letterSpacing:.5,textTransform:"uppercase",background:tab===t.k?"linear-gradient(135deg,#FFD700,#FFA500)":"#1C1C1E",color:tab===t.k?"#000":"#8E8E93",boxShadow:tab===t.k?"0 4px 12px rgba(255,215,0,.3)":"none",border:"1px solid #2C2C2E"}}>{t.i} {t.l}</B>
+        ))}
+      </div>}
+
+      <div style={{padding:view?0:"16px 20px 100px"}}>
+
+      {/* ===== ARENA TAB ===== */}
+      {!view&&tab==="arena"&&<div>
+
+        {/* ACTIVE CHALLENGE — HERO CARD */}
+        {(()=>{
+          const c=ACTIVE_CH, youIn=c.subs[YOU]||subbed, time=fmtTime(live(c.dl));
+          const subCount=Object.values(c.subs).filter(Boolean).length + (subbed?1:0);
+          const cap=c.captain;
+          return <div style={{background:"linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,165,0,.04))",border:"2px solid rgba(255,215,0,.35)",borderRadius:16,padding:20,marginBottom:14,position:"relative",overflow:"hidden",animation:!youIn?"glow 3s ease-in-out infinite":"none"}}>
+            <div style={{position:"absolute",top:0,right:0,width:120,height:120,background:"radial-gradient(circle,rgba(255,215,0,.06),transparent)",pointerEvents:"none"}}/>
+            <div style={{position:"relative"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:9,color:"#FFD700",fontWeight:800,letterSpacing:1}}>SQUAD CHALLENGE · Ch.{c.n}</span>
+                </div>
+                <span style={{fontSize:13,fontWeight:900,color:time.c,animation:time.crit?"pulse 1s infinite":"none"}}>{time.t}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+                <span style={{fontSize:16}}>{cap.av}</span>
+                <span style={{fontSize:11,color:"#8E8E93"}}><strong style={{color:"#FFF"}}>{cap.nm}'s pick</strong></span>
+                <span style={{fontSize:8,background:"rgba(52,199,89,.1)",color:"#34C759",padding:"2px 6px",borderRadius:4,fontWeight:800}}>📸 SNAP</span>
+                <span style={{fontSize:8,background:"rgba(255,149,0,.1)",color:"#FF9500",padding:"2px 6px",borderRadius:4,fontWeight:800}}>{c.weight}</span>
+              </div>
+              <div style={{fontSize:22,fontWeight:900,marginBottom:6,lineHeight:1.2}}>{c.prompt}</div>
+              <div style={{fontSize:12,color:"#8E8E93",marginBottom:16,padding:"6px 10px",background:"rgba(255,255,255,.03)",borderRadius:6,borderLeft:"3px solid #FF9500"}}>{c.rule}</div>
+              {snapCD!==null?<div style={{textAlign:"center",padding:16}}>
+                <div style={{fontSize:48,fontWeight:900,color:"#FFD700",animation:"countPulse .6s ease infinite"}}>{snapCD}</div>
+                <div style={{fontSize:11,color:"#6E6E73",marginTop:4}}>Opening camera...</div>
+              </div>:!youIn?<>
+                <div style={{fontSize:11,color:"#FF9500",textAlign:"center",marginBottom:10}}>
+                  {subCount===0?"Be the first.":subCount>=MEM.length-1?"Everyone's in except you.":`${subCount}/${MEM.length} snapped`}
+                </div>
+                <B onClick={doSnap} style={{width:"100%",padding:16,borderRadius:12,background:"linear-gradient(135deg,#FFD700,#FFA500)",color:"#000",fontSize:16,boxShadow:"0 4px 16px rgba(255,215,0,.3)"}}>📸 Snap it — one take, done</B>
+              </>:<div style={{textAlign:"center",padding:10,background:"rgba(52,199,89,.06)",borderRadius:8,border:"1px solid rgba(52,199,89,.2)",animation:"fadeUp .3s ease"}}>
+                <span style={{color:"#34C759",fontWeight:700,fontSize:13}}>✅ Snapped</span>
+              </div>}
+            </div>
+          </div>;
+        })()}
+
+        {/* NEXT CAPTAIN — if it's your turn to pick */}
+        {CAPTAIN_QUEUE[0]?.captain.id===YOU&&<div style={{background:"rgba(255,215,0,.06)",border:"2px solid rgba(255,215,0,.25)",borderRadius:12,padding:14,marginBottom:14,textAlign:"center"}}>
+          <div style={{fontSize:9,color:"#FFD700",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>🎯 YOU'RE UP — PICK CH.{CAPTAIN_QUEUE[0].n}</div>
+          <div style={{fontSize:13,color:"#8E8E93",marginBottom:12}}>Choose the next squad challenge. You have 4h or the system picks for you.</div>
+          <B onClick={()=>setView("pick")} style={{width:"100%",padding:14,borderRadius:10,background:"linear-gradient(135deg,#FFD700,#FFA500)",color:"#000",fontSize:14,boxShadow:"0 4px 16px rgba(255,215,0,.3)"}}>🎯 Pick a Challenge</B>
+        </div>}
+
+        {/* VOTING CARD */}
+        <div style={{background:"linear-gradient(135deg,rgba(175,82,222,.1),rgba(175,82,222,.03))",border:"2px solid rgba(175,82,222,.3)",borderRadius:14,padding:16,marginBottom:14,textAlign:"center"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:8,color:"#AF52DE",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>🗳️ Voting · Ch.{VOTING_CH.n}</span>
+            <span style={{fontSize:12,fontWeight:700,color:fmtTime(live(VOTING_CH.vdl)).c}}>{fmtTime(live(VOTING_CH.vdl)).t}</span>
+          </div>
+          <div style={{fontSize:16,fontWeight:800,marginBottom:10}}>{VOTING_CH.prompt}</div>
+          <B onClick={()=>{setView("vote");setVoted(false);}} style={{width:"100%",padding:14,borderRadius:10,background:"linear-gradient(135deg,#AF52DE,#7B2D8E)",color:"#FFF",fontSize:14,boxShadow:"0 4px 16px rgba(175,82,222,.3)"}}>⚔️ Vote Now</B>
+        </div>
+
+        {/* ACTIVE CALLOUT */}
+        {CALLOUTS.filter(d=>d.st==="active"&&(d.from===YOU||d.to===YOU)).map(d=>{
+          const time=fmtTime(live(d.dl));
+          return <div key={d.id} style={{background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:12,padding:14,marginBottom:14}}>
+            <div style={{fontSize:10,color:"#0A84FF",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>⚔️ ACTIVE CALLOUT</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:8}}>
+              <div style={{textAlign:"center"}}><div style={{fontSize:32}}>{MEM.find(m=>m.id===d.from)?.av}</div><div style={{fontSize:11,fontWeight:600}}>{d.fromNm}</div></div>
+              <div style={{fontSize:18,fontWeight:900,color:"#FFD700"}}>VS</div>
+              <div style={{textAlign:"center"}}><div style={{fontSize:32}}>{MEM.find(m=>m.id===d.to)?.av}</div><div style={{fontSize:11,fontWeight:600}}>{d.toNm}</div></div>
+            </div>
+            <div style={{fontSize:14,fontWeight:700,textAlign:"center",marginBottom:4}}>{d.prompt}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+              <span style={{fontSize:10,color:"#6E6E73"}}>Win +3 · Lose -1</span>
+              <span style={{fontSize:12,fontWeight:900,color:time.c}}>{time.t}</span>
+            </div>
+            <B onClick={doSnap} style={{width:"100%",marginTop:10,padding:12,borderRadius:8,background:"linear-gradient(135deg,#0A84FF,#0066CC)",color:"#FFF",fontSize:13}}>📸 Snap your response</B>
+          </div>;
+        })}
+
+        {/* ACTION STRIP */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+          <B onClick={()=>setCalloutTarget(MEM.find(m=>m.id!==YOU))} style={{background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:10,padding:12,color:"#FFF",fontSize:13}}>⚔️ Pick a Target</B>
+          <B onClick={openStir} style={{background:"linear-gradient(135deg,rgba(255,149,0,.1),rgba(255,69,0,.08))",border:"1px solid rgba(255,149,0,.3)",borderRadius:10,padding:12,color:"#FF9500",fontSize:13}}>🔥 Stir the Pot</B>
+        </div>
+
+        {/* LADDER SNAPSHOT */}
+        <div style={{background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:12,overflow:"hidden",marginBottom:14}}>
+          <div onClick={()=>setTab("ladder")} style={{background:"linear-gradient(135deg,rgba(175,82,222,.15),rgba(255,215,0,.08))",padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",borderBottom:"1px solid #2C2C2E"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:11,color:"#AF52DE",fontWeight:700}}>SEASON {SEASON.n}</span>
+              <span style={{fontSize:10,color:"#8E8E93"}}>Wk {SEASON.wk}/{SEASON.total}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#FF9500"}}>{SEASON.left} left · 1.5×</span>
+              <span style={{color:"#8E8E93",fontSize:11}}>›</span>
+            </div>
+          </div>
+          <div style={{padding:"8px 14px"}}>
+            {MEM.slice(0,4).map((m,i)=>{
+              const isY=m.id===YOU;
+              return <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderTop:i>0?"1px solid #2C2C2E":"none"}}>
+                <span style={{fontSize:14,fontWeight:800,color:i===0?"#FFD700":"#8E8E93",width:20}}>{i===0?"👑":i+1}</span>
+                <span style={{fontSize:18}}>{m.av}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:isY?700:500}}>{m.nm}{isY?" (you)":""}</div>
+                  {i===0?<div style={{fontSize:9,color:"#AF52DE",fontWeight:600}}>SEASON LEADER</div>:
+                   <div style={{fontSize:9,color:"#8E8E93"}}>{MEM[0].pts-m.pts} pts behind</div>}
+                </div>
+                <span style={{fontSize:15,fontWeight:800,color:isY?"#FFD700":"#FFF"}}>{m.pts}</span>
+                {m.str>=2&&<span style={{fontSize:10,color:"#FF9500"}}>🔥{m.str}</span>}
+              </div>;
+            })}
+          </div>
+        </div>
+
+        {/* RIVALRY FEED */}
+        <div style={{background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:14,padding:16}}>
+          <div style={{fontSize:11,color:"#8E8E93",textTransform:"uppercase",letterSpacing:1,fontWeight:700,marginBottom:12}}>📜 RIVALRY FEED</div>
+          {FEED.slice(0,5).map((ev,i)=>(
+            <div key={i} style={{padding:"10px 0",borderTop:i>0?"1px solid rgba(44,44,46,.6)":"none"}}>
+              <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                <span style={{fontSize:16,lineHeight:1,marginTop:2}}>{ev.icon}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,color:ev.color,fontWeight:600}}>{ev.text}</div>
+                  <div style={{fontSize:11,color:"#6E6E73",marginTop:3}}>{ev.sub}</div>
+                </div>
+                <span style={{fontSize:10,color:"#48484A",whiteSpace:"nowrap",marginTop:2}}>{ev.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>}
+
+
+      {/* ===== LADDER TAB ===== */}
+      {!view&&tab==="ladder"&&<div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{fontSize:15,fontWeight:900}}>👑 Season {SEASON.n} Rankings</div>
+          <div style={{background:"rgba(255,149,0,.1)",border:"1px solid rgba(255,149,0,.2)",borderRadius:8,padding:"4px 10px"}}>
+            <span style={{fontSize:11,color:"#FF9500",fontWeight:700}}>{SEASON.left} left · 1.5×</span>
+          </div>
+        </div>
+
+        <div style={{background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:14,overflow:"hidden",marginBottom:16}}>
+          {MEM.map((m,i)=>{
+            const isY=m.id===YOU, is1=i===0;
+            const prob=probs[m.id];
+            return <div key={m.id} onClick={()=>tapRival(m)} style={{
+              display:"flex",alignItems:"center",gap:10,padding:"12px 14px",
+              borderTop:i>0?"1px solid #2C2C2E":"none",
+              background:is1?"rgba(255,215,0,.04)":isY?"rgba(255,215,0,.02)":"transparent",
+              cursor:isY?"default":"pointer",
+            }}>
+              <span style={{fontSize:15,fontWeight:900,width:22,textAlign:"center",color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#48484A"}}>
+                {i===0?"👑":i+1}
+              </span>
+              <span style={{fontSize:24}}>{m.av}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:isY?700:500}}>
+                  {m.nm}{isY?" (you)":""}
+                  {m.str>=2&&<span style={{fontSize:10,color:"#FF9500",marginLeft:4}}>🔥{m.str}</span>}
+                </div>
+                <div style={{fontSize:10,color:"#6E6E73"}}>
+                  {is1?`Leading · ${m.w} wins`:
+                   i<PO?`${MEM[0].pts-m.pts} pts from 👑 · ${m.w} wins`:
+                   `Below cutline · ${m.w} wins`}
+                  {!m.q&&<span style={{color:"#FF3B30"}}> · {6-m.sub} subs needed</span>}
+                </div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:18,fontWeight:900,color:is1?"#FFD700":"#FFF"}}>{m.pts}</div>
+                <div style={{fontSize:9,fontWeight:700,color:pc(prob)}}>{prob}%</div>
+              </div>
+              {!isY&&<B onClick={e=>{e.stopPropagation();tapRival(m);}} style={{padding:"6px 10px",background:"rgba(175,82,222,.15)",border:"1px solid rgba(175,82,222,.3)",borderRadius:6,color:"#AF52DE",fontSize:10,fontWeight:700}}>DUEL</B>}
+            </div>;
+          })}
+        </div>
+        <div style={{textAlign:"center",fontSize:8,color:"#AF52DE",fontWeight:600,letterSpacing:1.5,marginTop:-10,marginBottom:14}}>── TOP {PO} MAKE PLAYOFFS ──</div>
+
+        {/* Weekly squad challenge */}
+        <div style={{background:"linear-gradient(135deg,rgba(175,82,222,.1),rgba(255,45,85,.08))",border:"2px solid rgba(175,82,222,.3)",borderRadius:14,padding:16,marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:11,color:"#AF52DE",fontWeight:700,letterSpacing:1}}>🎯 SQUAD CHALLENGE · Ch.{ACTIVE_CH.n}</span>
+            <span style={{fontSize:11,color:"#FF9500",fontWeight:700}}>{fmtTime(live(ACTIVE_CH.dl)).t}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+            <span style={{fontSize:14}}>{ACTIVE_CH.captain.av}</span>
+            <span style={{fontSize:11,color:"#8E8E93"}}><strong style={{color:"#E5E5EA"}}>{ACTIVE_CH.captain.nm}'s pick</strong></span>
+          </div>
+          <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>{ACTIVE_CH.prompt}</div>
+          <div style={{fontSize:12,color:"#8E8E93",marginBottom:12}}>All members compete · Ranked voting · {ACTIVE_CH.weight} points</div>
+          <B onClick={()=>setTab("arena")} style={{width:"100%",padding:12,borderRadius:10,background:"linear-gradient(135deg,#AF52DE,#7B2D8E)",color:"#FFF",fontSize:14}}>Submit Entry</B>
+          <div style={{marginTop:10,padding:"8px 10px",background:"rgba(255,255,255,.02)",borderRadius:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:10,color:"#6E6E73"}}>Next captain:</span>
+            <span style={{fontSize:10,color:"#FFD700",fontWeight:600}}>{CAPTAIN_QUEUE[0]?.captain.av} {CAPTAIN_QUEUE[0]?.captain.nm} picks Ch.{CAPTAIN_QUEUE[0]?.n}</span>
+          </div>
+        </div>
+
+        {/* Battle Log */}
+        <div style={{background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:14,padding:16,marginBottom:14}}>
+          <div style={{fontSize:11,color:"#8E8E93",textTransform:"uppercase",letterSpacing:1,fontWeight:700,marginBottom:12}}>⚔️ BATTLE LOG</div>
+          {SCORED.map(ch=>(
+            <div key={ch.id} onClick={()=>showRes(ch)} style={{padding:"10px 0",borderTop:"1px solid rgba(44,44,46,.6)",cursor:"pointer"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600}}>Ch.{ch.n}: {ch.prompt}</div>
+                  <div style={{fontSize:10,color:"#6E6E73",marginTop:2}}>{ch.res?.slice(0,3).map((r,i)=><span key={r.mid}>{["🥇","🥈","🥉"][i]} {r.nm}{i<2?" · ":""}</span>)}</div>
+                </div>
+                <span style={{fontSize:11,color:"#6E6E73"}}>→</span>
+              </div>
+            </div>
+          ))}
+          {CALLOUTS.filter(d=>d.st==="scored").map(d=>(
+            <div key={d.id} style={{padding:"10px 0",borderTop:"1px solid rgba(44,44,46,.6)"}}>
+              <div style={{fontSize:13,fontWeight:600}}>⚔️ {d.fromNm} vs {d.toNm}</div>
+              <div style={{fontSize:10,marginTop:2}}><span style={{color:"#34C759"}}>{d.winNm} +3</span> · <span style={{color:"#FF3B30"}}>{d.loserNm} -1</span></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Champions */}
+        <div>
+          <div style={{fontSize:11,color:"#8E8E93",textTransform:"uppercase",letterSpacing:1,fontWeight:700,marginBottom:8}}>🏆 Hall of Champions</div>
+          <div style={{display:"flex",gap:6}}>
+            {CHAMPS.map(ch=>(
+              <div key={ch.s} style={{flex:1,background:"#1C1C1E",border:"1px solid #2C2C2E",borderRadius:8,padding:10,textAlign:"center"}}>
+                <div style={{fontSize:7,color:"#48484A",fontWeight:700}}>S{ch.s}</div>
+                <div style={{fontSize:22,margin:"4px 0"}}>{ch.av}</div>
+                <div style={{fontSize:10,fontWeight:700}}>{ch.nm}</div>
+              </div>
+            ))}
+            <div style={{flex:1,background:"#1C1C1E",border:"1px dashed #2C2C2E",borderRadius:8,padding:10,textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+              <div style={{fontSize:7,color:"#48484A",fontWeight:700}}>S3</div>
+              <div style={{fontSize:16}}>❓</div>
+              <div style={{fontSize:9,color:"#FFD700"}}>TBD</div>
+            </div>
+          </div>
+        </div>
+      </div>}
+
+
+      {/* ===== VOTE VIEW ===== */}
+      {view==="vote"&&<div style={{padding:20}}>
+        <B onClick={()=>setView(null)} style={{background:"none",color:"#555",fontSize:12,padding:0,marginBottom:12}}>← Back</B>
+        {voted?<div style={{textAlign:"center",padding:"60px 20px",animation:"fadeUp .4s ease"}}>
+          <div style={{fontSize:56,marginBottom:12}}>✅</div>
+          <div style={{fontSize:20,fontWeight:900}}>Rankings Submitted</div>
+          <div style={{fontSize:12,color:"#555",marginTop:6}}>Results drop when voting closes.</div>
+        </div>:<>
+          <div style={{textAlign:"center",marginBottom:18}}>
+            <div style={{fontSize:9,color:"#AF52DE",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:3}}>Rank the Submissions</div>
+            <div style={{fontSize:16,fontWeight:900}}>{VOTING_CH.prompt}</div>
+            <div style={{fontSize:10,color:"#555",marginTop:3}}>Your ranking = their points.</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+            {voteOrder.map((item,idx)=>{
+              const labels=["🥇 1st — 7.5 pts","🥈 2nd — 4.5 pts","🥉 3rd — 3 pts"];
+              const bds=["rgba(255,215,0,.3)","rgba(192,192,192,.2)","rgba(205,127,50,.15)"];
+              return <div key={item.mid} style={{background:"#1C1C1E",border:`2px solid ${bds[idx]||"#2C2C2E"}`,borderRadius:12,padding:11,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{display:"flex",flexDirection:"column"}}>
+                  <B onClick={()=>idx>0&&mv(idx,idx-1)} style={{background:"none",fontSize:14,padding:"1px 3px",lineHeight:1,color:idx===0?"#1C1C1E":"#6E6E73"}}>▲</B>
+                  <B onClick={()=>idx<voteOrder.length-1&&mv(idx,idx+1)} style={{background:"none",fontSize:14,padding:"1px 3px",lineHeight:1,color:idx===voteOrder.length-1?"#1C1C1E":"#6E6E73"}}>▼</B>
+                </div>
+                <div style={{width:44,height:44,borderRadius:8,background:"#2C2C2E",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>📷</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700}}>{item.av} {item.nm}</div>
+                  <div style={{fontSize:9,color:idx===0?"#FFD700":"#555",fontWeight:600,marginTop:1}}>{labels[idx]||""}</div>
+                </div>
+              </div>;
+            })}
+          </div>
+          <B onClick={doVote} style={{width:"100%",padding:16,borderRadius:12,background:"linear-gradient(135deg,#AF52DE,#7B2D8E)",color:"#FFF",fontSize:15}}>Submit Rankings</B>
+        </>}
+      </div>}
+
+
+      {/* ===== PICK CHALLENGE VIEW ===== */}
+      {view==="pick"&&<div style={{padding:20}}>
+        <B onClick={()=>setView(null)} style={{background:"none",color:"#555",fontSize:12,padding:0,marginBottom:12}}>← Back</B>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:36,marginBottom:6}}>🎯</div>
+          <div style={{fontSize:9,color:"#FFD700",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:3}}>You're the Challenge Captain</div>
+          <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>Pick Ch.{CAPTAIN_QUEUE[0]?.n}</div>
+          <div style={{fontSize:12,color:"#6E6E73"}}>Everyone in {SQUAD.name} will compete. Choose wisely — or strategically.</div>
+          <div style={{fontSize:11,color:"#FF9500",fontWeight:600,marginTop:6}}>⏰ 3h 42m until system auto-picks</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+          {CH_OPTIONS.map((opt,i)=>(
+            <B key={i} onClick={()=>{Sounds.victory();addToast(`🎯 Ch.${CAPTAIN_QUEUE[0]?.n} set: "${opt}"`,"victory");setTimeout(()=>setView(null),1500);}} style={{
+              width:"100%",padding:"14px 16px",textAlign:"left",
+              background:"#1C1C1E",border:"2px solid #2C2C2E",borderRadius:10,
+              color:"#FFF",fontSize:14,fontWeight:500,
+              display:"flex",alignItems:"center",justifyContent:"space-between",
+            }}>
+              <span>{opt}</span>
+              <span style={{fontSize:10,color:"#FFD700",fontWeight:700,flexShrink:0,marginLeft:8}}>SELECT</span>
+            </B>
+          ))}
+        </div>
+        <div style={{textAlign:"center",fontSize:10,color:"#48484A",marginTop:8}}>
+          Can't decide? Close this and the system picks in 3h 42m.<br/>
+          <span style={{color:"#FF3B30"}}>Ghost tax: you'll get a 🏳️ on the standings.</span>
+        </div>
+      </div>}
+
+
+      {/* ===== RESULTS VIEW ===== */}
+      {view==="results"&&<div style={{padding:20}}>
+        <B onClick={()=>{setView(null);setRevealStep(0);}} style={{background:"none",color:"#555",fontSize:12,padding:0,marginBottom:12}}>← Back</B>
+        <div style={{textAlign:"center",marginBottom:18}}>
+          <div style={{fontSize:9,color:"#FFD700",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:3}}>Challenge 4 Results</div>
+          <div style={{fontSize:16,fontWeight:900}}>Prove you left the house today</div>
+        </div>
+        {SCORED[0].res.map((r,i)=>{
+          const mem=MEM.find(m=>m.id===r.mid), vis=revealStep>i;
+          return <div key={r.mid} style={{
+            background:i===0&&vis?"rgba(255,215,0,.04)":"#1C1C1E",borderRadius:10,padding:12,marginBottom:4,
+            border:i===0&&vis?"1px solid rgba(255,215,0,.2)":"1px solid #2C2C2E",
+            opacity:vis?1:.06,transform:vis?"translateY(0)":"translateY(8px)",transition:"all .5s ease",
+          }}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontSize:14,fontWeight:900,width:22,textAlign:"center"}}>{r.dns?"—":["🥇","🥈","🥉"][i]||`${i+1}`}</div>
+              <div style={{fontSize:22}}>{mem?.av}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700}}>{r.nm}</div>
+                {r.dns&&<div style={{fontSize:9,color:"#FF3B30"}}>DNS</div>}
+              </div>
+              <div style={{fontSize:16,fontWeight:900,color:r.pts>=5?"#FFD700":r.pts>=3?"#C0C0C0":r.pts>0?"#CD7F32":"#3A3A3E"}}>+{r.pts}</div>
+            </div>
+          </div>;
+        })}
+      </div>}
+
+
+      {/* ===== SETTINGS ===== */}
+      {view==="settings"&&<div style={{padding:20}}>
+        <B onClick={()=>setView(null)} style={{background:"none",color:"#555",fontSize:12,padding:0,marginBottom:16}}>← Back</B>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:16}}>⚙️ Settings</div>
+        <div style={{background:"#1C1C1E",border:"1px solid #2C2C2E",borderRadius:12,padding:16,marginBottom:16}}>
+          <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>{SQUAD.name}</div>
+          <div style={{fontSize:12,color:"#8E8E93"}}>Admin: Mom · {MEM.length} members · Season {SEASON.n}</div>
+        </div>
+
+        <div style={{background:"rgba(175,82,222,.06)",border:"1px solid rgba(175,82,222,.2)",borderRadius:12,padding:16,marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#AF52DE",marginBottom:4}}>🏆 Next Season Config</div>
+          <div style={{fontSize:10,color:"#6E6E73",marginBottom:14}}>Changes apply when Season {SEASON.n+1} starts.</div>
+
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8E8E93",marginBottom:6}}>Season Length</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {[["4d","4 days"],["1wk","1 week"],["2wk","2 weeks"],["3wk","3 weeks"],["4wk","4 weeks"],["6wk","6 weeks"]].map(([k,l])=>(
+                <B key={k} onClick={()=>setSeasonLen(k)} style={{padding:"6px 10px",borderRadius:6,fontSize:11,background:seasonLen===k?"#AF52DE":"#2C2C2E",color:seasonLen===k?"#FFF":"#8E8E93",border:"none"}}>{l}</B>
+              ))}
+            </div>
+            {seasonLen==="4d"&&<div style={{fontSize:10,color:"#FF9500",marginTop:6,fontStyle:"italic"}}>🎿 Perfect for trips — short, intense, everyone's together</div>}
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8E8E93",marginBottom:6}}>Squad Challenge Drops</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {[["2xday","2× / day"],["1xday","1× / day"],["mwf","Mon Wed Fri"],["eod","Every other day"]].map(([k,l])=>(
+                <B key={k} onClick={()=>setChalFreq(k)} style={{padding:"6px 10px",borderRadius:6,fontSize:11,background:chalFreq===k?"#AF52DE":"#2C2C2E",color:chalFreq===k?"#FFF":"#8E8E93",border:"none"}}>{l}</B>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:"#6E6E73",marginTop:6}}>
+              {(()=>{
+                const lens={"4d":4,"1wk":7,"2wk":14,"3wk":21,"4wk":28,"6wk":42};
+                const freqs={"2xday":2,"1xday":1,"mwf":3/7,"eod":0.5};
+                const days=lens[seasonLen]||21;
+                const perDay=freqs[chalFreq]||0.43;
+                const total=Math.round(days*perDay);
+                const maxPts=total*5;
+                return `≈ ${total} challenges · ${maxPts} max pts · Captain rotates every ${Math.max(1,Math.floor(total/MEM.length))} challenges`;
+              })()}
+            </div>
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8E8E93",marginBottom:6}}>Response Window</div>
+            <div style={{display:"flex",gap:4}}>
+              {[["4h","4 hours"],["6h","6 hours"],["8h","8 hours"],["12h","12 hours"],["24h","24 hours"]].map(([k,l])=>(
+                <B key={k} onClick={()=>setRespWindow(k)} style={{padding:"6px 10px",borderRadius:6,fontSize:11,background:respWindow===k?"#AF52DE":"#2C2C2E",color:respWindow===k?"#FFF":"#8E8E93",border:"none"}}>{l}</B>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:"#6E6E73",marginTop:6}}>How long members have to snap after a challenge drops</div>
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8E8E93",marginBottom:6}}>Voting Window</div>
+            <div style={{display:"flex",gap:4}}>
+              {[["2h","2 hours"],["4h","4 hours"],["8h","8 hours"]].map(([k,l])=>(
+                <B key={k} onClick={()=>setVoteWindow(k)} style={{padding:"6px 10px",borderRadius:6,fontSize:11,background:voteWindow===k?"#AF52DE":"#2C2C2E",color:voteWindow===k?"#FFF":"#8E8E93",border:"none"}}>{l}</B>
+              ))}
+            </div>
+          </div>
+
+          <div style={{background:"rgba(255,255,255,.03)",borderRadius:8,padding:10,border:"1px solid rgba(255,255,255,.05)"}}>
+            <div style={{fontSize:11,color:"#8E8E93"}}>⚔️ <strong style={{color:"#E5E5EA"}}>1v1 Callouts</strong> — always available, anytime. Not affected by cadence settings.</div>
+          </div>
+
+          <B onClick={()=>{setSeasonLen("4d");setChalFreq("2xday");setRespWindow("6h");setVoteWindow("2h");addToast("🎿 Trip Mode activated!","victory");}} style={{width:"100%",marginTop:12,padding:12,borderRadius:8,background:"linear-gradient(135deg,rgba(255,149,0,.1),rgba(255,69,0,.08))",border:"1px solid rgba(255,149,0,.3)",color:"#FF9500",fontSize:12}}>
+            🎿 Trip Mode — 4 days, 2×/day, fast windows
+          </B>
+        </div>
+
+        <div style={{background:"rgba(255,215,0,.06)",border:"1px solid rgba(255,215,0,.2)",borderRadius:12,padding:16,marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#FFD700",marginBottom:10}}>📲 Invite</div>
+          <div style={{fontSize:24,fontWeight:900,letterSpacing:5,color:"#FFD700",textAlign:"center",marginBottom:10}}>{SQUAD.code}</div>
+          <B onClick={()=>addToast("📋 Code copied!","info")} style={{width:"100%",padding:10,borderRadius:8,background:"rgba(255,255,255,.04)",border:"1px solid #2C2C2E",color:"#8E8E93",fontSize:12}}>📋 Copy</B>
+        </div>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#48484A",marginBottom:8}}>👥 Members</div>
+        {MEM.map(m=><div key={m.id} style={{background:"#1C1C1E",border:"1px solid #2C2C2E",borderRadius:10,padding:12,marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{fontSize:24}}>{m.av}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700}}>{m.nm}{m.id===YOU?" (You)":""}{m.admin?" 👑":""}{m.minor?<span style={{fontSize:9,color:"#007AFF",marginLeft:4}}>Minor</span>:""}</div>
+            <div style={{fontSize:11,color:"#8E8E93"}}>{m.pts} pts · {m.sub} subs</div>
+          </div>
+          {!m.admin&&m.id!==YOU&&<B onClick={()=>addToast(`⏸️ ${m.nm} suspended`,"info")} style={{background:"rgba(255,59,48,.08)",border:"1px solid rgba(255,59,48,.2)",color:"#FF3B30",fontSize:9,padding:"5px 8px",borderRadius:6}}>Suspend</B>}
+        </div>)}
+      </div>}
+
+
+      {/* ===== CALLOUT MODAL ===== */}
+      {calloutTarget&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setCalloutTarget(null)}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#1C1C1E",borderRadius:16,padding:24,width:"100%",maxWidth:360,border:"1px solid #2C2C2E"}}>
+          {calloutSent?<div style={{textAlign:"center",animation:"fadeUp .3s ease"}}>
+            <div style={{fontSize:48,marginBottom:8}}>⚔️</div>
+            <div style={{fontSize:18,fontWeight:900}}>Callout Sent!</div>
+            <div style={{fontSize:12,color:"#6E6E73",marginTop:4}}>{calloutTarget.nm} has 24h. Win +3 · Lose -1.</div>
+          </div>:<>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:36,marginBottom:4}}>{calloutTarget.av}</div>
+              <div style={{fontSize:18,fontWeight:900}}>Call out {calloutTarget.nm}?</div>
+              <div style={{fontSize:11,color:"#6E6E73",marginTop:4}}>Pick a challenge. Both snap. Squad votes.</div>
+              <div style={{fontSize:11,color:"#FF9500",marginTop:4,fontWeight:700}}>Win +3 · Lose -1</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+              {CALLOUT_PROMPTS.map(p=>(<B key={p} onClick={()=>sendCallout(p)} style={{width:"100%",padding:"10px 14px",background:"rgba(10,132,255,.06)",border:"1px solid rgba(10,132,255,.15)",borderRadius:8,color:"#0A84FF",fontSize:12,textAlign:"left"}}>⚔️ {p}</B>))}
+            </div>
+            <B onClick={()=>setCalloutTarget(null)} style={{width:"100%",padding:10,background:"none",color:"#555",fontSize:12,border:"1px solid #2C2C2E",borderRadius:8}}>Cancel</B>
+          </>}
+        </div>
+      </div>}
+
+
+      {/* ===== STIR MODAL ===== */}
+      {showStir&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowStir(false)}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#1C1C1E",borderRadius:16,padding:24,width:"100%",maxWidth:360,border:"1px solid #2C2C2E"}}>
+          <div style={{textAlign:"center",marginBottom:16}}>
+            <div style={{fontSize:36,marginBottom:4}}>🔥</div>
+            <div style={{fontSize:18,fontWeight:900}}>Stir the Pot</div>
+            <div style={{fontSize:11,color:"#6E6E73",marginTop:4}}>{3-stirCount} pokes left today</div>
+          </div>
+          <div style={{background:"rgba(255,149,0,.06)",border:"1px solid rgba(255,149,0,.15)",borderRadius:10,padding:14,marginBottom:14,minHeight:60}}>
+            <div style={{fontSize:14,color:"#FF9500",lineHeight:1.5,fontStyle:"italic"}}>"{stirText}"</div>
+          </div>
+          <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <B onClick={()=>{setStirText(BANTER[Math.floor(Math.random()*BANTER.length)]);setStirSent(false);}} style={{flex:1,padding:10,background:"#2C2C2E",borderRadius:8,color:"#8E8E93",fontSize:12}}>🔄 New</B>
+            <B onClick={sendStir} style={{flex:1,padding:10,background:stirSent||stirCount>=3?"#2C2C2E":"linear-gradient(135deg,#FF9500,#FF6B00)",borderRadius:8,color:stirSent||stirCount>=3?"#555":"#FFF",fontSize:12,opacity:stirCount>=3?.4:1}}>{stirSent?"✅ Sent":"🔥 Send"}</B>
+          </div>
+          <B onClick={()=>setShowStir(false)} style={{width:"100%",padding:10,background:"none",color:"#555",fontSize:12,border:"1px solid #2C2C2E",borderRadius:8}}>Close</B>
+        </div>
+      </div>}
+
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<Versus />, document.getElementById('root'));
+</script>
+</body>
+</html>
